@@ -1,2 +1,3 @@
-yaml
+pyyaml
 logging
+networkx==3.4.2

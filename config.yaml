@@ -4,4 +4,7 @@ logging:
 filepaths:
   aa_coords: "data/aa_coords"
   aa_cgenff_parameters: "data/aa_cgenff"
+  aa_gmx_parameters: "data/aa_gmx"
   cgenff: "/opt/silcsbio.2024.1/cgenff/cgenff"
+  charmm2gmx: "/opt/charmm2gmx/cgenff_charmm2gmx/cgenff_charmm2gmx_py3_nx3.py"
+  charmm36_ff: "/usr/local/gromacs/share/gromacs/top/charmm36-jul2022.ff"

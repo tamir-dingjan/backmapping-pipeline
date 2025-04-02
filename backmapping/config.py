@@ -1,5 +1,6 @@
 import yaml
 import os
+import sys
 from backmapping.logger import logger
 
 logger.debug("Reading config file")
@@ -15,6 +16,7 @@ def load_config(config_path="config.yaml"):
 
     except Exception as e:
         logger.error(f"Error loading config file at {config_path}: {e}")
+        sys.exit()
 
 
 def check_fields(config, fields: list):
@@ -29,8 +31,10 @@ def check_fields(config, fields: list):
 def convert_relative_to_absolute_path(path: str, root: str):
     if not os.path.exists(root):
         logger.error(f"Error! Couldn't find project root path: {root}")
+        sys.exit()
     elif not os.path.exists(os.path.join(root, path)):
         logger.error(f"Error! Couldn't find path: {os.path.join(root,path)}")
+        sys.exit()
     else:
         return os.path.abspath(os.path.join(root, path))
 
