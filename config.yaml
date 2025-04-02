@@ -1,0 +1,7 @@
+logging:
+  level: DEBUG
+
+filepaths:
+  aa_coords: "data/aa_coords"
+  aa_cgenff_parameters: "data/aa_cgenff"
+  cgenff: "/opt/silcsbio.2024.1/cgenff/cgenff"

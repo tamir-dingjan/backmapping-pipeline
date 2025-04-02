@@ -1,2 +1,7 @@
 __pycache__
+backmapping.log
 schro.ve
+*gz
+mdp_files
+data
+scripts/prepare/template.py
