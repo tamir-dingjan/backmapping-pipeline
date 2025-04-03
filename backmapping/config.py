@@ -16,7 +16,7 @@ def load_config(config_path="config.yaml"):
 
     except Exception as e:
         logger.error(f"Error loading config file at {config_path}: {e}")
-        sys.exit()
+        raise (e)
 
 
 def check_fields(config, fields: list):

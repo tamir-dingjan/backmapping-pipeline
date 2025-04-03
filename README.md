@@ -28,7 +28,7 @@ The backmapping pipeline follows these steps:
     - Create a virtual environment using the Schrodinger suite and install MDAnalysis:
     ```
     $SCHRODINGER/run schrodinger_virtualenv.py schro.ve
-    source schro.vs/bin/activate
+    source schro.ve/bin/activate
     python3 -m pip install --upgrade pip
     pip install --upgrade MDAnalysis
     ```
@@ -38,7 +38,8 @@ The backmapping pipeline follows these steps:
 
 3. Convert CHARMM-formatted parameters to GMX format: `python scripts/prepare/1_convert_cgenff_params_to_gmx.py --config config.yaml`
 
-4. Generate stereochemistry reference: 
+4. Generate stereochemistry reference: `source schro.ve/bin/activate; python scripts/prepare/2_make_stereo_reference.py --config config.yaml`
+
 
 
 ## License
