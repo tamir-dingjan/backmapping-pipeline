@@ -15,6 +15,15 @@ config_data = {
 }
 
 
+def count_atom_lines(path):
+    count = 0
+    with open(path, "r") as f:
+        for line in f.readlines():
+            if "ATOM" in line:
+                count += 1
+    return count
+
+
 def test_generate_cgenff_params_produces_output_files(tmp_path):
     # Populate temp dir with data
     os.makedirs(os.path.join(tmp_path, "data", "aa_coords"))
@@ -52,3 +61,6 @@ def test_generate_cgenff_params_produces_output_files(tmp_path):
     # Validate
     assert result.returncode == 0, f"Script failed with return code: {result.stderr}"
     assert os.path.isfile(os.path.join(tmp_path, "data", "aa_cgenff", "PSM.str"))
+    assert count_atom_lines(
+        os.path.join(os.path.dirname(__file__), "data", "aa_cgenff", "PSM.str")
+    ) == count_atom_lines(os.path.join(tmp_path, "data", "aa_cgenff", "PSM.str"))
