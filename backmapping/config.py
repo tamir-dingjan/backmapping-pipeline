@@ -6,12 +6,16 @@ from backmapping.logger import logger
 logger.debug("Reading config file")
 
 
-def load_config(config_path="config.yaml"):
+def load_config(config_path: str):
     try:
         with open(config_path, "r") as f:
             config = yaml.safe_load(f)
             logger.setLevel(config["logging"]["level"])
-            absolutize_paths(config, os.path.dirname(config_path))
+
+            logger.debug("Absolutizing paths in config file.")
+            project_root = os.path.dirname(os.path.abspath(config_path))
+            logger.debug(f"Setting project root directory to: {project_root}")
+            absolutize_paths(config, project_root)
         return config
 
     except Exception as e:
