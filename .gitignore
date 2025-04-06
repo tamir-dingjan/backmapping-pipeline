@@ -4,5 +4,6 @@ schro.ve
 *gz
 mdp_files
 data
+!/tests/data
 scripts/prepare/template.py
 *csv

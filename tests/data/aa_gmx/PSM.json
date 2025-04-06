@@ -1,0 +1,34 @@
+{
+    "PSM": {
+        "chiral": {
+            " C2S": "S",
+            " C3S": "R"
+        },
+        "unsat": {
+            "0": {
+                "begin": " O13",
+                "end": " P  ",
+                "stereo": "NONE"
+            },
+            "1": {
+                "begin": " C5S",
+                "end": " C4S",
+                "stereo": "E"
+            },
+            "2": {
+                "begin": " O22",
+                "end": " C21",
+                "stereo": "NONE"
+            }
+        },
+        "amide": {
+            "0": {
+                "H": 78,
+                "N": 27,
+                "C": 79,
+                "O": 80,
+                "stereo": "trans"
+            }
+        }
+    }
+}
