@@ -114,6 +114,6 @@ def main():
 
 
 if __name__ == "__main__":
-    logger.info(f"Starting {__name__}")
+    logger.info(f"Starting {__file__}")
     main()
-    logger.info(f"Finished {__name__}")
+    logger.info(f"Finished {__file__}")

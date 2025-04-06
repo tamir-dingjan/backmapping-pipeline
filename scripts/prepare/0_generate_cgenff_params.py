@@ -56,5 +56,6 @@ def main():
 
 
 if __name__ == "__main__":
-    logger.info("Starting 0_generate_cgenff_params")
+    logger.info(f"Starting {__file__}")
     main()
+    logger.info(f"Finished {__file__}")
