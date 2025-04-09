@@ -1,0 +1,76 @@
+CRYST1   44.094   44.094   44.094  90.00  90.00  90.00 P 1           1
+ATOM      1  P   CEPG    1      24.510  21.160  33.250  1.00  0.00           P  
+ATOM      2  C1  CEPG    1      25.320  22.440  31.040  1.00  0.00           C  
+ATOM      3  O1  CEPG    1      23.200  24.950  27.660  1.00  0.00           O  
+ATOM      4  C2  CEPG    1      24.640  22.550  29.680  1.00  0.00           C  
+ATOM      5  C3  CEPG    1      25.350  23.640  28.840  1.00  0.00           C  
+ATOM      6  C4  CEPG    1      23.900  24.140  27.040  1.00  0.00           C  
+ATOM      7  C11 CEPG    1      22.210  20.270  32.350  1.00  0.00           C  
+ATOM      8  O11 CEPG    1      25.080  21.200  31.670  1.00  0.00           O  
+ATOM      9  C12 CEPG    1      20.770  20.700  32.110  1.00  0.00           C  
+ATOM     10  O12 CEPG    1      22.880  21.360  32.940  1.00  0.00           O  
+ATOM     11  C13 CEPG    1      19.960  19.690  31.290  1.00  0.00           C  
+ATOM     12  O13 CEPG    1      24.710  19.810  33.800  1.00  0.00           O  
+ATOM     13  O14 CEPG    1      25.000  22.370  33.940  1.00  0.00           O  
+ATOM     14  C15 CEPG    1      23.540  23.560  25.690  1.00  0.00           C  
+ATOM     15  C21 CEPG    1      23.650  20.820  28.310  1.00  0.00           C  
+ATOM     16  O21 CEPG    1      24.710  21.300  28.980  1.00  0.00           O  
+ATOM     17  C22 CEPG    1      23.930  19.490  27.610  1.00  0.00           C  
+ATOM     18  O22 CEPG    1      22.550  21.370  28.220  1.00  0.00           O  
+ATOM     19  O31 CEPG    1      25.020  23.580  27.460  1.00  0.00           O  
+ATOM     20  OC2 CEPG    1      20.870  21.890  31.370  1.00  0.00           O  
+ATOM     21  OC3 CEPG    1      19.820  18.460  31.970  1.00  0.00           O  
+ATOM     22  HA  CEPG    1      26.400  22.530  30.970  1.00  0.00           H  
+ATOM     23  HB  CEPG    1      24.980  23.260  31.670  1.00  0.00           H  
+ATOM     24  HO2 CEPG    1      21.580  22.370  31.800  1.00  0.00           H  
+ATOM     25  HO3 CEPG    1      20.700  18.130  32.160  1.00  0.00           H  
+ATOM     26  HS  CEPG    1      23.600  22.840  29.820  1.00  0.00           H  
+ATOM     27  HY  CEPG    1      25.130  24.630  29.250  1.00  0.00           H  
+ATOM     28  HX  CEPG    1      26.430  23.520  28.920  1.00  0.00           H  
+ATOM     29 H11A CEPG    1      22.720  19.970  31.430  1.00  0.00           H  
+ATOM     30 H11B CEPG    1      22.260  19.420  33.040  1.00  0.00           H  
+ATOM     31 H12A CEPG    1      20.270  20.910  33.060  1.00  0.00           H  
+ATOM     32 H13A CEPG    1      20.430  19.520  30.320  1.00  0.00           H  
+ATOM     33 H13B CEPG    1      18.960  20.090  31.090  1.00  0.00           H  
+ATOM     34 H2R1 CEPG    1      23.780  18.710  28.360  1.00  0.00           H  
+ATOM     35 H2R2 CEPG    1      23.530  22.490  25.870  1.00  0.00           H  
+ATOM     36 H2S1 CEPG    1      24.990  19.460  27.330  1.00  0.00           H  
+ATOM     37 H2S2 CEPG    1      24.340  23.760  24.980  1.00  0.00           H  
+CONECT    1    8   10   12   13
+CONECT    2    4   22   23    8
+CONECT    3    6
+CONECT    4    2    5   16   26
+CONECT    5    4   19   27   28
+CONECT    6    3   14   19
+CONECT    7   10   29   30    9
+CONECT    8    1    2
+CONECT    9    7   20   31   11
+CONECT   10    1    7
+CONECT   11    9   21   32   33
+CONECT   12    1
+CONECT   13    1
+CONECT   14    6   35   37
+CONECT   15   16   17   18
+CONECT   16    4   15
+CONECT   17   15   34   36
+CONECT   18   15
+CONECT   19    5    6
+CONECT   20    9   24
+CONECT   21   11   25
+CONECT   22    2
+CONECT   23    2
+CONECT   24   20
+CONECT   25   21
+CONECT   26    4
+CONECT   27    5
+CONECT   28    5
+CONECT   29    7
+CONECT   30    7
+CONECT   31    9
+CONECT   32   11
+CONECT   33   11
+CONECT   34   17
+CONECT   35   14
+CONECT   36   17
+CONECT   37   14
+END

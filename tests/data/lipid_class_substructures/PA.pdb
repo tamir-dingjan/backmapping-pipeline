@@ -1,0 +1,54 @@
+CRYST1   43.899   43.899   43.899  90.00  90.00  90.00 P 1           1
+ATOM      1  P   CCPA    1      20.980  22.460  33.700  1.00  0.00           P  
+ATOM      2  C1  CCPA    1      22.770  23.890  32.430  1.00  0.00           C  
+ATOM      3  O1  CCPA    1      20.360  22.950  29.350  1.00  0.00           O  
+ATOM      4  C2  CCPA    1      22.310  23.870  30.950  1.00  0.00           C  
+ATOM      5  C3  CCPA    1      23.170  24.860  30.070  1.00  0.00           C  
+ATOM      6  C4  CCPA    1      21.310  22.240  29.650  1.00  0.00           C  
+ATOM      7  O11 CCPA    1      22.430  22.660  33.110  1.00  0.00           O  
+ATOM      8  C12 CCPA    1      21.740  20.920  29.040  1.00  0.00           C  
+ATOM      9  O12 CCPA    1      21.250  21.470  34.930  1.00  0.00           O  
+ATOM     10  O13 CCPA    1      20.520  23.730  34.260  1.00  0.00           O  
+ATOM     11  O14 CCPA    1      20.070  21.840  32.700  1.00  0.00           O  
+ATOM     12  C21 CCPA    1      22.690  25.740  26.980  1.00  0.00           C  
+ATOM     13  O21 CCPA    1      22.340  22.520  30.470  1.00  0.00           O  
+ATOM     14  C22 CCPA    1      23.120  24.420  26.360  1.00  0.00           C  
+ATOM     15  O22 CCPA    1      21.740  26.450  26.670  1.00  0.00           O  
+ATOM     16  O31 CCPA    1      22.750  24.770  28.710  1.00  0.00           O  
+ATOM     17  HA  CCPA    1      23.870  23.990  32.320  1.00  0.00           H  
+ATOM     18  HB  CCPA    1      22.300  24.770  32.920  1.00  0.00           H  
+ATOM     19  HS  CCPA    1      21.250  24.190  31.010  1.00  0.00           H  
+ATOM     20  HY  CCPA    1      23.180  25.910  30.440  1.00  0.00           H  
+ATOM     21  HX  CCPA    1      24.210  24.460  30.150  1.00  0.00           H  
+ATOM     22  H12 CCPA    1      21.050  20.540  34.870  1.00  0.00           H  
+ATOM     23 H2R1 CCPA    1      23.120  23.610  27.120  1.00  0.00           H  
+ATOM     24 H2R2 CCPA    1      21.730  20.110  29.800  1.00  0.00           H  
+ATOM     25 H2S1 CCPA    1      24.160  24.430  25.970  1.00  0.00           H  
+ATOM     26 H2S2 CCPA    1      22.780  20.930  28.650  1.00  0.00           H  
+CONECT    1    7    9   10   11
+CONECT    2    4   17   18    7
+CONECT    3    6
+CONECT    4    2    5   13   19
+CONECT    5    4   16   20   21
+CONECT    6    3    8   13
+CONECT    7    1    2
+CONECT    8    6   24   26
+CONECT    9    1   22
+CONECT   10    1
+CONECT   11    1
+CONECT   12   14   15   16
+CONECT   13    4    6
+CONECT   14   12   23   25
+CONECT   15   12
+CONECT   16    5   12
+CONECT   17    2
+CONECT   18    2
+CONECT   19    4
+CONECT   20    5
+CONECT   21    5
+CONECT   22    9
+CONECT   23   14
+CONECT   24    8
+CONECT   25   14
+CONECT   26    8
+END
