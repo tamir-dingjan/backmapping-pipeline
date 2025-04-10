@@ -1,0 +1,56 @@
+CRYST1   45.548   45.548   45.548  90.00  90.00  90.00 P 1           1
+ATOM      1  N   CMPE    1      21.510  22.240  36.680  1.00  0.00           N  
+ATOM      2  P   CMPE    1      23.240  23.100  34.030  1.00  0.00           P  
+ATOM      3  C1  CMPE    1      22.340  24.260  31.840  1.00  0.00           C  
+ATOM      4  C2  CMPE    1      22.500  24.450  30.340  1.00  0.00           C  
+ATOM      5  C3  CMPE    1      23.720  25.310  29.990  1.00  0.00           C  
+ATOM      6  C4  CMPE    1      23.190  25.470  27.660  1.00  0.00           C  
+ATOM      7  C11 CMPE    1      20.620  22.870  34.480  1.00  0.00           C  
+ATOM      8  O11 CMPE    1      22.920  23.080  32.390  1.00  0.00           O  
+ATOM      9  C12 CMPE    1      20.330  22.760  35.960  1.00  0.00           C  
+ATOM     10  O12 CMPE    1      21.730  23.730  34.410  1.00  0.00           O  
+ATOM     11  O13 CMPE    1      23.140  21.810  34.770  1.00  0.00           O  
+ATOM     12  O14 CMPE    1      24.170  24.140  34.450  1.00  0.00           O  
+ATOM     13  C21 CMPE    1      21.380  22.680  29.120  1.00  0.00           C  
+ATOM     14  O21 CMPE    1      22.500  23.170  29.700  1.00  0.00           O  
+ATOM     15  O31 CMPE    1      24.060  25.180  28.620  1.00  0.00           O  
+ATOM     16  HN1 CMPE    1      21.440  22.230  37.680  1.00  0.00           H  
+ATOM     17  HN2 CMPE    1      21.800  21.350  36.280  1.00  0.00           H  
+ATOM     18  HN3 CMPE    1      22.330  22.760  36.380  1.00  0.00           H  
+ATOM     19  HA  CMPE    1      22.770  25.120  32.360  1.00  0.00           H  
+ATOM     20  HB  CMPE    1      21.280  24.260  32.090  1.00  0.00           H  
+ATOM     21  HS  CMPE    1      21.640  25.030  29.990  1.00  0.00           H  
+ATOM     22  HY  CMPE    1      23.540  26.350  30.230  1.00  0.00           H  
+ATOM     23  HX  CMPE    1      24.590  24.980  30.570  1.00  0.00           H  
+ATOM     24 H11A CMPE    1      19.800  23.300  33.900  1.00  0.00           H  
+ATOM     25 H11B CMPE    1      20.830  21.890  34.040  1.00  0.00           H  
+ATOM     26 H12A CMPE    1      20.070  23.760  36.330  1.00  0.00           H  
+ATOM     27 H12B CMPE    1      19.470  22.110  36.130  1.00  0.00           H  
+CONECT    1    9   16   17   18
+CONECT    2    8   10   11   12
+CONECT    3    4   19   20    8
+CONECT    4    3    5   14   21
+CONECT    5    4   15   22   23
+CONECT    6   15
+CONECT    7   10   24   25    9
+CONECT    8    2    3
+CONECT    9    1    7   26   27
+CONECT   10    2    7
+CONECT   11    2
+CONECT   12    2
+CONECT   13   14
+CONECT   14    4   13
+CONECT   15    5    6
+CONECT   16    1
+CONECT   17    1
+CONECT   18    1
+CONECT   19    3
+CONECT   20    3
+CONECT   21    4
+CONECT   22    5
+CONECT   23    5
+CONECT   24    7
+CONECT   25    7
+CONECT   26    9
+CONECT   27    9
+END

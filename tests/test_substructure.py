@@ -17,6 +17,28 @@ def test_substructure_detection_for_whole_lipid():
     assert detected_lipid_class == LipidClass.SM
 
 
+def test_substructure_detection_for_PC_headgroup():
+    coord_path = os.path.join(
+        os.path.dirname(__file__), "data", "lipid_class_substructures", "PC.pdb"
+    )
+    structure = load_structure_from_file(coord_path)
+
+    detected_lipid_class = substructure.detect_lipid_class(structure)
+
+    assert detected_lipid_class == LipidClass.PC
+
+
+def test_substructure_detection_for_PE_headgroup():
+    coord_path = os.path.join(
+        os.path.dirname(__file__), "data", "lipid_class_substructures", "PE.pdb"
+    )
+    structure = load_structure_from_file(coord_path)
+
+    detected_lipid_class = substructure.detect_lipid_class(structure)
+
+    assert detected_lipid_class == LipidClass.PE
+
+
 def test_substructure_detection_for_PA_headgroup():
     coord_path = os.path.join(
         os.path.dirname(__file__), "data", "lipid_class_substructures", "PA.pdb"
@@ -97,6 +119,8 @@ def test_substructure_detection_for_HexCer_headgroup():
 if __name__ == "__main__":
     test_substructure_detection_for_Cer_headgroup()
     test_substructure_detection_for_HexCer_headgroup()
+    test_substructure_detection_for_PC_headgroup()
+    test_substructure_detection_for_PE_headgroup()
     test_substructure_detection_for_PA_headgroup()
     test_substructure_detection_for_PG_headgroup()
     test_substructure_detection_for_PI_headgroup()

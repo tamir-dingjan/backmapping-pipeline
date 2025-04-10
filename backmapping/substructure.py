@@ -1,5 +1,5 @@
 from rdkit import Chem
-from backmapping.workflow import LipidClass
+from backmapping.lipidclass import LipidClass
 from backmapping.logger import logger
 
 
@@ -10,14 +10,18 @@ def get_substructure_for_lipid_class(LipidClass):
     # Note that the hydrogen atoms included in these patterns include implicit hydrogens
     # that are implied by RDKit as it interprets the connectivity (i.e., PH)
     match LipidClass:
+        case LipidClass.PC:
+            return "[H]C([H])(OC)C([H])(OC)C([H])([H])O[PH](O)(O)OC([H])([H])C([H])([H])[N+](C([H])([H])[H])(C([H])([H])[H])C([H])([H])[H]"
+        case LipidClass.PE:
+            return "[H]C([H])(OC)C([H])(OC)C([H])([H])O[PH](O)(O)OC([H])([H])C([H])([H])[N+]([H])([H])[H]"
         case LipidClass.PI:
-            return "[H]OC1([H])C([H])(O[H])C([H])(O[H])C([H])(O[PH](O)(O)OC([H])([H])C([H])(OC(O)C([H])[H])C([H])([H])OC(O)C([H])[H])C([H])(O[H])C1([H])O[H]"
+            return "[H]OC1([H])C([H])(O[H])C([H])(O[H])C([H])(O[PH](O)(O)OC([H])([H])C([H])(OC)C([H])([H])OC)C([H])(O[H])C1([H])O[H]"
         case LipidClass.PA:
-            return "[H]O[PH](O)(O)OC([H])([H])C([H])(OC(O)C([H])[H])C([H])([H])OC(O)C([H])[H]"
+            return "[H]O[PH](O)(O)OC([H])([H])C([H])(OC)C([H])([H])OC"
         case LipidClass.PS:
-            return "[H]C([H])C(O)OC([H])([H])C([H])(OC(O)C([H])[H])C([H])([H])O[PH](O)(O)OC([H])([H])C([H])(C(O)O)[N+]([H])([H])[H]"
+            return "[H]C([H])(OC)C([H])(OC)C([H])([H])O[PH](O)(O)OC([H])([H])C([H])(C(O)O)[N+]([H])([H])[H]"
         case LipidClass.PG:
-            return "[H]OC([H])([H])C([H])(O[H])C([H])([H])O[PH](O)(O)OC([H])([H])C([H])(OC(O)C([H])[H])C([H])([H])OC(O)C([H])[H]"
+            return "[H]OC([H])([H])C([H])(O[H])C([H])([H])O[PH](O)(O)OC([H])([H])C([H])(OC)C([H])([H])OC"
         case LipidClass.Cer:
             return "[H]OC([H])([H])C([H])(N([H])C(O)C([H])[H])C([H])(C)O[H]"
         case LipidClass.SM:

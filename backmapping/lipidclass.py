@@ -2,6 +2,8 @@ from enum import Enum
 
 
 class LipidClass(Enum):
+    PC = "PC"
+    PE = "PE"
     PI = "PI"
     PA = "PA"
     PS = "PS"
