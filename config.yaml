@@ -8,6 +8,7 @@ filepaths:
   mdp: "mdp_files/min.mdp"
   stereo: "data/stereo"
   martini_beads: "0_tailbeads.csv"
+  mapping: "data/Mapping"
   cg_martini_parameters: "data/cg_martini"
   cgenff: "/opt/silcsbio.2024.1/cgenff/cgenff"
   charmm2gmx: "/opt/charmm2gmx/cgenff_charmm2gmx/cgenff_charmm2gmx_py3_nx3.py"
