@@ -1,10 +1,25 @@
 from rdkit import Chem
+import json
 import networkx as nx
 import fnmatch
+from backmapping.logger import logger
 
 
-def load_structure_from_file(path: str):
+def load_structure_from_pdb_file(path: str):
     structure = Chem.rdmolfiles.MolFromPDBFile(path, sanitize=True, removeHs=False)
+    if structure is None:
+        msg = f"Problem loading structure from file: {path}"
+        logger.error(msg)
+        raise Exception(msg)
+    return structure
+
+
+def load_structure_from_mol2_file(path: str):
+    structure = Chem.rdmolfiles.MolFromMol2File(path, sanitize=True, removeHs=False)
+    if structure is None:
+        msg = f"Problem loading structure from file: {path}"
+        logger.error(msg)
+        raise Exception(msg)
     return structure
 
 
@@ -53,3 +68,16 @@ def load_itp_as_network(filepath):
                 current_section = "bonds"
 
     return topology
+
+
+def get_bead_order_from_itp(filepath):
+    with open(filepath, "r") as itp:
+        for line in itp.readlines():
+            if fnmatch.fnmatch(line, ";@BEADS*"):
+                return line.split("BEADS ")[-1]
+
+
+def load_stereo_reference(path: str):
+    with open(path, "r") as f:
+        stereo_reference = json.load(f)
+    return stereo_reference
