@@ -9,5 +9,10 @@ class LipidClass(Enum):
     PS = "PS"
     PG = "PG"
     Cer = "Cer"
+    DeoxyCer = "DeoxyCer"
     SM = "SM"
     HexCer = "HexCer"
+    Sterol = "Sterol"
+
+
+unsupported_lipid_classes = {LipidClass.Sterol}
