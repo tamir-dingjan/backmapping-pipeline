@@ -9,7 +9,7 @@
 - [License](#license)
 
 ## Intro
-`backmapping-pipeline` is an organized set of tools for generating all-atom parameters for lipid molecules to allow resolution transformation from a MARTINI coarse-grained simulation.
+`backmapping-pipeline` is an organized set of tools for generating all-atom parameters for lipid molecules to allow resolution transformation from a Martini coarse-grained simulation.
 
 ## Requirements
 * Python 3.11
@@ -32,13 +32,13 @@ The backmapping pipeline follows these steps:
             - `aa_gmx_parameters`: Directory for the GROMACS format parameter files. Default value: "data/aa_gmx"
             - `stereo`: Directory for the concatenated stereoconformation record file. Default value: "data/stereo"
             - `mapping`: Directory for the mapping files to be written to. Default value: "data/Mapping"
-            - `cg_martini_parameters`: Directory for the coarse-grained MARTINI parameter files. Default value: "data/cg_martini"
+            - `cg_martini_parameters`: Directory for the coarse-grained Martini parameter files. Default value: "data/cg_martini"
         - The locations of binaries or external Python tools:
             - `cgenff`: Location of the CGenFF binary. Default value: "/opt/silcsbio.2024.1/cgenff/cgenff"
             - `charmm2gmx`: Location of the CHARMM-to-GROMACS parameter file conversion tool. Default value: "/opt/charmm2gmx/cgenff_charmm2gmx/cgenff_charmm2gmx_py3_nx3.py"
             - `charmm36_ff`: Location of the CHARMM36 force field in GROMACS format, available from the [MacKerell group website](https://mackerell.umaryland.edu/charmm_ff.shtml#gromacs). Default value: "/usr/local/gromacs/share/gromacs/top/charmm36-jul2022.ff"
             - `gmx`: Location of the GROMACS binary `gmx` or `gmx_mpi`. Default value: "/usr/local/gromacs-2021.3/bin/gmx_mpi"
-            - `write_martini_itp`: Location of the MARTINI parameter file generation tool. Default value: "/opt/martini/lipid-martini-itp-v06.py"
+            - `write_martini_itp`: Location of the Martini parameter file generation tool. Default value: "/opt/martini/lipid-martini-itp-v06.py"
     - Assemble all-atom structures of the lipids to be simulated in mol2 format, stored in the path defined in `config.yaml` under `filepaths:aa_coords`
     - Create a virtual environment using the Schrodinger suite and install MDAnalysis:
     ```
@@ -58,6 +58,7 @@ The backmapping pipeline follows these steps:
 
 ## Common issues and how to fix them
 - The all-atom structures of lipids in mol2 format should have reasonable geometry, because the way bond valences are inferred by RDKit does involve the molecular conformation. If using the Schrodinger Suite to prepare these input structures, a quick minimisation seems to suffice.
+- The Martini force field parameters for sterols are not able to be generated automatically using the tools available from the force field developers. However, `backmapping-pipeline` still needs to work with all-atom coordinate files and CGenFF-generated all-atom force field parameters in order to control the stereochemistry for sterols during backmapping. To make this possible, please add your own Martini force field parameters for any sterol species into the `filepaths:cg_martini` directory, and ensure the filenames match with the all-atom coordinate files.
 
 
 ## License
