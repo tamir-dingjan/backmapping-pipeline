@@ -3,6 +3,9 @@ import os.path
 import subprocess
 import glob
 import sys
+import fnmatch
+import numpy as np
+from collections import defaultdict
 from backmapping.config import load_config, check_fields
 from backmapping.logger import logger
 
@@ -73,6 +76,57 @@ def convert_params(param_file: str, coord_file: str, basename: str, config: dict
     )
 
 
+def collect_additional_parameters(files: list, config: dict):
+    params = defaultdict(list)
+
+    current_section = None
+
+    for file in files:
+        with open(file, "r") as f:
+            for line in f.readlines():
+                if (line[0] == ";") or (line.isspace()):
+                    continue
+                elif fnmatch.fnmatch(line, "*[[] bondtypes []]*"):
+                    current_section = "bond"
+                    continue
+                elif fnmatch.fnmatch(line, "*[[] angletypes []]*"):
+                    current_section = "angle"
+                    continue
+                elif fnmatch.fnmatch(line, "*[[] dihedraltypes []]*"):
+                    current_section = "dihedral"
+                    continue
+                else:
+                    params[current_section].append(line)
+
+    # Remove duplicates
+    unique_params = {x: np.unique(params[x]) for x in params.keys()}
+
+    # Save
+    with open(
+        os.path.join(config["filepaths"]["aa_gmx_parameters"], "additional_params.prm"),
+        "w",
+    ) as f:
+        if "bond" in params.keys():
+            f.write(
+                "[ bondtypes ]\n;      i        j  func           b0           kb\n"
+            )
+            for line in unique_params["bond"]:
+                f.write(line)
+        if "angle" in params.keys():
+            f.write(
+                "\n[ angletypes ]\n;      i        j        k  func       theta0       ktheta          ub0          kub\n"
+            )
+            for line in unique_params["angle"]:
+                f.write(line)
+
+        if "dihedral" in params.keys():
+            f.write(
+                "\n[ dihedraltypes ]\n;      i        j        k        l  func         phi0         kphi  mult\n"
+            )
+            for line in unique_params["dihedral"]:
+                f.write(line)
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="Load config file with file input and output paths."
@@ -111,6 +165,15 @@ def main():
             )
         else:
             convert_params(param_file, coord_file, basename, config)
+
+    # Concatenate any generated additional parameter files
+    additional_param_files = glob.glob(
+        os.path.join(config["filepaths"]["aa_gmx_parameters"], "*.prm")
+    )
+    collect_additional_parameters(additional_param_files, config)
+    logger.info(
+        f"Finished converting CHARMM format parameters to GMX format. Output saved in {config['filepaths']['aa_gmx_parameters']}"
+    )
 
 
 if __name__ == "__main__":
