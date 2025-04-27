@@ -1,6 +1,16 @@
 logging:
   level: DEBUG
 
+patches:
+  patchdir: "/path/to/patches/"
+  traj: "data/cg_traj/cg.xtc"
+  top: "data/cg_traj/cg.gro"
+  frame_start: 0
+  frame_end: 1000
+  frame_stride: 10
+  resid: 0,1,2
+  size: 5
+
 filepaths:
   aa_coords: "data/aa_coords"
   aa_cgenff_parameters: "data/aa_cgenff"
@@ -9,7 +19,7 @@ filepaths:
   stereo: "data/stereo"
   martini_beads: "0_tailbeads.csv"
   mapping: "data/Mapping"
-  cg_martini_parameters: "data/cg_martini"
+  cg_martini_parameters: "data/cg_martini""
   cgenff: "/opt/silcsbio.2024.1/cgenff/cgenff"
   charmm2gmx: "/opt/charmm2gmx/cgenff_charmm2gmx/cgenff_charmm2gmx_py3_nx3.py"
   charmm36_ff: "/usr/local/gromacs/share/gromacs/top/charmm36-jul2022.ff"

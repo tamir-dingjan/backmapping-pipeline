@@ -2,6 +2,8 @@ from rdkit import Chem
 import json
 import networkx as nx
 import fnmatch
+import mdtraj as md
+import os
 from backmapping.logger import logger
 
 
@@ -81,3 +83,20 @@ def load_stereo_reference(path: str):
     with open(path, "r") as f:
         stereo_reference = json.load(f)
     return stereo_reference
+
+
+def load_cg_trajectory(traj, top):
+    if not os.path.isfile(traj):
+        msg = f"Trajectory file {traj} does not exist."
+        logger.error(msg)
+        raise FileNotFoundError(msg)
+    if not os.path.isfile(top):
+        msg = f"Topology file {top} does not exist."
+        logger.error(msg)
+        raise FileNotFoundError(msg)
+    try:
+        return md.load(traj, top=top)
+    except Exception as e:
+        msg = f"Error loading trajectory {traj} and topology {top}: {e}"
+        logger.error(msg)
+        raise
