@@ -12,6 +12,8 @@ EXCLUDED_BEADS_FILE = os.path.join(
     os.path.dirname(__file__), "excluded_bead_resnames.yaml"
 )
 
+MAX_STEREOCHEM_CORRECTION_ITER = 5
+
 
 class Patch:
 
@@ -37,6 +39,7 @@ class Patch:
         self.core = None
         self.excluded_beads = None
         self.lipids = None
+        self.stereoconf_file = None
 
         # Read in the excluded bead residue names
         # These are used for excluding beads during backmapping
@@ -295,9 +298,9 @@ class Patch:
             logger.error(f"Coordinate kicking failed: {self.patchdir}")
             raise FileNotFoundError(f"Coordinate kicking failed: {self.patchdir}")
 
-    def minimise_in_vacuum(self):
-        coord = os.path.join(self.patchdir, "kicked.gro")
-        output = os.path.join(self.patchdir, "minvac.gro")
+    def minimise_in_vacuum(self, inname: str, outname: str):
+        coord = os.path.join(self.patchdir, f"{inname}.gro")
+        output = os.path.join(self.patchdir, f"{outname}.gro")
         if os.path.isfile(coord):
             logger.debug(f"Minimising in vacuum: {coord}")
             args = [
@@ -310,7 +313,7 @@ class Patch:
                 "-p",
                 "patch.top",
                 "-o",
-                "minvac.tpr",
+                f"{outname}.tpr",
                 "-maxwarn",
                 "2",
             ]
@@ -319,14 +322,58 @@ class Patch:
                 self.config["filepaths"]["gmx"],
                 "mdrun",
                 "-deffnm",
-                "minvac",
+                f"{outname}",
             ]
             subprocess.run(args, cwd=self.patchdir)
         if not os.path.isfile(output):
             logger.error(f"Minimisation in vacuum failed: {self.patchdir}")
             raise FileNotFoundError(f"Minimisation failed: {self.patchdir}")
 
-    def apply_correct_stereoisomers(self):
+    def has_correct_stereo(self, coordfile: str):
+        # Check if the provided coordinate file has the correct stereoconformation
+        output = os.path.join(self.patchdir, "stereo.check")
+        execfile = os.path.join(self.patchdir, "run_stereo_check.sh")
+        stereo_check = os.path.abspath(
+            os.path.join(os.path.dirname(__file__), "stereo/check.py")
+        )
+        stereo_lookup = os.path.abspath(
+            os.path.join(self.config["filepaths"]["stereo"], "stereo.json")
+        )
+        with open(execfile, "w") as f:
+            f.writelines(
+                "\n".join(
+                    [
+                        "#!/usr/bin/bash",
+                        # Try to use the same stereo.tpr from the first stereochemistry correction step
+                        # This file only stores connectivity, not conformation
+                        # f"{self.config["filepaths"]["gmx"]} grompp -f {self.config["filepaths"]["mdp"]} -c {coordfile} -p patch.top -o stereo_check.tpr -maxwarn 1",
+                        f"source {self.config["filepaths"]["schro_venv"]}",
+                        f"python {stereo_check} {coordfile} stereo.tpr {stereo_lookup}",
+                    ]
+                )
+            )
+
+        subprocess.run(
+            ["bash", execfile],
+            cwd=self.patchdir,
+        )
+
+        if not os.path.isfile(output):
+            logger.error(f"Checking stereoconformation failed: {self.patchdir}")
+            raise FileNotFoundError(
+                f"Checking stereoconformation failed: {self.patchdir}"
+            )
+
+        # Load the result of the check and return true or false
+        with open(output, "r") as f:
+            stereomatch = f.readlines()
+
+        if "True" in stereomatch:
+            return True
+        else:
+            return False
+
+    def apply_correct_stereoisomers(self, coordfile: str):
         # NOTE: Must use a version of Gromacs which produces TPR files
         # readable by the schro.ve virtual environment
         output = os.path.join(self.patchdir, "stereo.gro")
@@ -342,9 +389,9 @@ class Patch:
                 "\n".join(
                     [
                         "#!/usr/bin/bash",
-                        f"{self.config["filepaths"]["gmx"]} grompp -f {self.config["filepaths"]["mdp"]} -c minvac.gro -p patch.top -o stereo.tpr -maxwarn 1",
+                        f"{self.config["filepaths"]["gmx"]} grompp -f {self.config["filepaths"]["mdp"]} -c {coordfile} -p patch.top -o stereo.tpr -maxwarn 1",
                         f"source {self.config["filepaths"]["schro_venv"]}",
-                        f"python {stereo} minvac.gro stereo.tpr {stereo_lookup}",
+                        f"python {stereo} {coordfile} stereo.tpr {stereo_lookup}",
                     ]
                 )
             )
@@ -388,12 +435,20 @@ class Patch:
 
     def solvate(self):
         logger.debug(f"Solvating patch: {self.patchdir}")
+        if self.stereoconf_file == None:
+            logger.error("Stereoconformer file not set before solvation!")
+            raise ValueError(f"Stereoconformer file not set before solvation")
+        elif not os.path.isfile(self.stereoconf_file):
+            logger.error(f"Couldn't find stereoconformer file: {self.stereoconf_file}")
+            raise FileNotFoundError(
+                f"Couldn't find stereoconformer file: {self.stereoconf_file}"
+            )
         output = os.path.join(self.patchdir, "solv.gro")
         args = [
             self.config["filepaths"]["gmx"],
             "solvate",
             "-cp",
-            "resnums.gro",
+            f"{self.stereoconf_file}",
             "-p",
             "patch.top",
             "-o",
@@ -530,7 +585,8 @@ class Patch:
                         "#!/usr/bin/bash",
                         f"{self.config["filepaths"]["gmx"]} make_ndx -f ions.gro -n index.ndx -o index.ndx << EOF",
                         '!"Water_and_ions"',
-                        f"name {lipid_group} lipid" "q",
+                        f"name {lipid_group} lipid",
+                        "q",
                         "EOF",
                     ]
                 )
@@ -718,14 +774,57 @@ class PatchCoordinator:
             patch.run_backward()
             patch.remake_box_vectors()
             patch.kick_overlapping_atoms()
-            patch.minimise_in_vacuum()
-            patch.apply_correct_stereoisomers()
-            patch.restore_residue_numbers()
+            patch.minimise_in_vacuum("kicked", "minvac")
+            # The residue numbers are reset to begin from
+            # 1 in minvac.gro. This should not be a problem,
+            # but they can be copied back over from kicked.gro:
+            # patch.restore_residue_numbers()
+
+    def correct_patch_stereoconformation(self):
+        # Continue attempting to correct stereochemistry until MAX_STEREOCHEM_CORRECTION_ITER
+        # is reached
+        try:
+            for patch in self.patches:
+                patch.apply_correct_stereoisomers("minvac.gro")
+                # Produces "stereo.gro"
+
+                stereochem_correction_iter = 0
+                patch.minimise_in_vacuum(
+                    "stereo", f"stereo_min_{stereochem_correction_iter}"
+                )
+                # Produces "stereo_min_0.gro"
+
+                while not (
+                    patch.has_correct_stereo(
+                        f"stereo_min_{stereochem_correction_iter}.gro"
+                    )
+                    or stereochem_correction_iter > MAX_STEREOCHEM_CORRECTION_ITER
+                ):
+                    patch.apply_correct_stereoisomers(
+                        f"stereo_min_{stereochem_correction_iter}.gro"
+                    )
+                    # Overwrites "stereo.gro"
+
+                    stereochem_correction_iter += 1
+                    patch.minimise_in_vacuum(
+                        "stereo", f"stereo_min_{stereochem_correction_iter}"
+                    )
+                patch.stereoconf_file = os.path.abspath(
+                    os.path.join(
+                        patch.patchdir, f"stereo_min_{stereochem_correction_iter}.gro"
+                    )
+                )
+
+        except Exception as e:
+            logger.error(e)
 
     def prepare_patches_for_simulation(self):
-        for patch in self.patches:
-            patch.solvate()
-            patch.delete_membrane_waters()
-            patch.add_ions()
-            patch.generate_index()
-            patch.minimise()
+        try:
+            for patch in self.patches:
+                patch.solvate()
+                patch.delete_membrane_waters()
+                patch.add_ions()
+                patch.generate_index()
+                patch.minimise()
+        except Exception as e:
+            logger.error(e)
