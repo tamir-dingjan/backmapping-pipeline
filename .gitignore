@@ -3,9 +3,8 @@ __pycache__
 schro.ve
 *gz
 data
-!/data/backward.py
-!/data/Mapping/__init__.py
-!/tests/data
+!data/Mapping/__init__.py
+!tests/data
 scripts/prepare/template.py
 *csv
 scripts/run/patches
