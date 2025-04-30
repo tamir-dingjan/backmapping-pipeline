@@ -2,13 +2,13 @@ logging:
   level: DEBUG
 
 patches:
-  patchdir: "/path/to/patches/"
-  traj: "data/cg_traj/cg.xtc"
-  top: "data/cg_traj/cg.gro"
+  patchdir: "patches"
+  traj: "cg.xtc"
+  top: "cg_snapshot.gro"
   frame_start: 0
-  frame_end: 1000
-  frame_stride: 10
-  resid: 0,1,2
+  frame_end: 5
+  frame_stride: 5
+  resid: [1,2,3]
   size: 5
 
 filepaths:
@@ -19,9 +19,12 @@ filepaths:
   stereo: "data/stereo"
   martini_beads: "0_tailbeads.csv"
   mapping: "data/Mapping"
-  cg_martini_parameters: "data/cg_martini""
+  cg_martini_parameters: "data/cg_martini"
   cgenff: "/opt/silcsbio.2024.1/cgenff/cgenff"
   charmm2gmx: "/opt/charmm2gmx/cgenff_charmm2gmx/cgenff_charmm2gmx_py3_nx3.py"
   charmm36_ff: "/usr/local/gromacs/share/gromacs/top/charmm36-jul2022.ff"
   gmx: "/usr/local/gromacs-2021.3/bin/gmx_mpi"
   write_martini_itp: "/opt/martini/lipid-martini-itp-v06.py"
+  backward: "data/backward.py"
+  schro_venv: "schro.ve/bin/activate"
+  water_deletor: "water_deletor.pl"

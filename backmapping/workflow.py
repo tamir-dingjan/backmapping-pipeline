@@ -1039,6 +1039,7 @@ class BackmappingWorkflow:
 
     def write_linker_atom_spacing(self):
         spacing_lines = []
+        spacing_lines.append("[ out ]")
         # Ceramide lipids do not have a head group region, so set the source
         # for tracing paths throughout the linker region to the nitrogen atom
         # For other lipids, set the source to the head region atom
@@ -1058,7 +1059,6 @@ class BackmappingWorkflow:
                 )
             ]
             self.seen_nodes.append(get_single_region_nbor("linker", "head", self.aa))
-            spacing_lines.append("[ out ]")
             spacing_lines.append(" ".join(spacing))
 
             # Start traversing bonded paths within the linker region from the head region nbor

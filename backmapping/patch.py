@@ -4,6 +4,7 @@ import yaml
 import shutil
 import glob
 import subprocess
+from backmapping import kicker
 from backmapping.io_utils import load_cg_trajectory
 from backmapping.logger import logger
 
@@ -17,24 +18,22 @@ class Patch:
     # TODO: refactor to work with config dict rather than individual settings
     # This will let each patch know where backward.py and the schro.ve files are
     def __init__(
-        self,
-        patchdir,
-        outname,
-        cg_traj,
-        cg_top,
-        patch_frame: int,
-        patch_resid: int,
-        patch_size: float,
+        self, config, patchdir, outname, patch_frame: int, patch_resid: int, traj=None
     ):
         logger.debug("Initializing Patch")
-        self.patchdir = patchdir
+        self.config = config
+        self.patchdir = os.path.abspath(patchdir)
         self.outname = outname
-        self.cg_traj = cg_traj
-        self.cg_top = cg_top
+        self.outfile = os.path.join(
+            self.patchdir,
+            self.outname,
+        )
+        self.cg_traj = config["patches"]["traj"]
+        self.cg_top = config["patches"]["top"]
         self.patch_frame = patch_frame
         self.patch_resid = patch_resid
-        self.patch_size = patch_size
-        self.traj = None
+        self.patch_size = config["patches"]["size"]
+        self.traj = traj
         self.core = None
         self.excluded_beads = None
         self.lipids = None
@@ -55,7 +54,12 @@ class Patch:
             logger.error(f"Patch directory {self.patchdir} does not exist.")
             raise FileNotFoundError(f"Patch directory {self.patchdir} does not exist.")
 
-        self.traj = load_cg_trajectory(self.cg_traj, self.cg_top)
+        # Optionally load the trajectory if passed in
+        if self.traj is None:
+            logger.debug(
+                f"Loading trajectory {self.cg_traj} with topology {self.cg_top}."
+            )
+            self.traj = load_cg_trajectory(self.cg_traj, self.cg_top)
         if self.traj is None:
             logger.error(
                 f"Failed to load trajectory {self.cg_traj} with topology {self.cg_top}."
@@ -63,7 +67,6 @@ class Patch:
             raise ValueError(
                 f"Failed to load trajectory {self.cg_traj} with topology {self.cg_top}."
             )
-        logger.debug(f"Loaded trajectory {self.cg_traj} with topology {self.cg_top}.")
 
         # Validate the patch selection frame and residue are within the trajectory
         if self.patch_frame > len(self.traj):
@@ -97,7 +100,8 @@ class Patch:
 
     def select_patch_residues(self):
         # TODO: Refactor to work on a single frame (self.patch_frame)
-
+        # Keep a backup of the coordinates
+        coord_backup = self.traj.xyz[self.patch_frame].copy()
         box = self.traj.unitcell_lengths[self.patch_frame]
         logger.debug(f"Box dimensions: {box}")
 
@@ -193,20 +197,20 @@ class Patch:
             "resSeq %s" % " ".join(map(str, com_residues))
         )
 
-        # Save out the bilayer patch coordinates
+        # Extract the bilayer patch coordinates
         self.output = self.traj[self.patch_frame].atom_slice(patch_whole)
-        logger.debug(
+        logger.info(
             f"Selected {self.output.n_atoms} beads, {self.output.n_residues} residues."
         )
 
+        # Restore the original trajectory coordinates
+        # This is because the COM shift affects the source trajectory,
+        # which needs to be reused for the next patch
+        self.traj.xyz[self.patch_frame] = coord_backup
+
     def write_patch(self):
-        self.output.save_gro(
-            os.path.join(
-                self.patchdir,
-                self.outname,
-            )
-        )
-        logger.debug(f"Saved patch coordinates to {self.patchdir}/{self.outname}")
+        self.output.save_gro(self.outfile)
+        logger.info(f"Saved patch coordinates to {self.outfile}")
 
     def get_lipid_contents(self):
         # Determine the count and order of lipids to be written to the topology
@@ -236,37 +240,340 @@ class Patch:
         return lipids, contents_lipids, contents_counts
 
     def run_backward(self):
-        pass
+        logger.debug(f"Running backward.py for {self.patchdir}")
+        output = os.path.join(self.patchdir, "patch_aa.gro")
+        args = [
+            "python",
+            self.config["filepaths"]["backward"],
+            "-f",
+            self.outfile,
+            "-p",
+            "patch.top",
+            "-o",
+            output,
+            "-to",
+            "charmm36",
+            "-from",
+            "martini",
+            "-kick",
+            "0",
+        ]
+        subprocess.run(args, cwd=self.patchdir)
+        if not os.path.isfile(output):
+            logger.error(f"Backward.py failed: {self.patchdir}")
+            raise FileNotFoundError(f"Backward.py failed: {self.patchdir}")
 
     def remake_box_vectors(self):
-        pass
+        logger.debug(f"Remaking box vectors for {self.patchdir}")
+        output = os.path.join(self.patchdir, "box.gro")
+        args = [
+            self.config["filepaths"]["gmx"],
+            "editconf",
+            "-f",
+            "patch_aa.gro",
+            "-o",
+            output,
+            "-box",
+            str(self.config["patches"]["size"]),
+            str(self.config["patches"]["size"]),
+            str(self.config["patches"]["size"] * 2),
+        ]
+        subprocess.run(args, cwd=self.patchdir)
+        if not os.path.isfile(output):
+            logger.error(f"Box vectors generation failed: {self.patchdir}")
+            raise FileNotFoundError(f"Box vectors generation failed: {self.patchdir}")
 
     def kick_overlapping_atoms(self):
-        pass
+        logger.debug(f"Kicking box file for: {self.patchdir}")
+
+        box_file = os.path.join(self.patchdir, "box.gro")
+        output = os.path.join(self.patchdir, "kicked.gro")
+
+        kicker.run(box_file, kick_amount=0.02, radius=0.02)
+
+        if not os.path.isfile(output):
+            logger.error(f"Coordinate kicking failed: {self.patchdir}")
+            raise FileNotFoundError(f"Coordinate kicking failed: {self.patchdir}")
 
     def minimise_in_vacuum(self):
-        pass
+        coord = os.path.join(self.patchdir, "kicked.gro")
+        output = os.path.join(self.patchdir, "minvac.gro")
+        if os.path.isfile(coord):
+            logger.debug(f"Minimising in vacuum: {coord}")
+            args = [
+                self.config["filepaths"]["gmx"],
+                "grompp",
+                "-f",
+                os.path.join(self.config["filepaths"]["mdp"]),
+                "-c",
+                coord,
+                "-p",
+                "patch.top",
+                "-o",
+                "minvac.tpr",
+                "-maxwarn",
+                "2",
+            ]
+            subprocess.run(args, cwd=self.patchdir)
+            args = [
+                self.config["filepaths"]["gmx"],
+                "mdrun",
+                "-deffnm",
+                "minvac",
+            ]
+            subprocess.run(args, cwd=self.patchdir)
+        if not os.path.isfile(output):
+            logger.error(f"Minimisation in vacuum failed: {self.patchdir}")
+            raise FileNotFoundError(f"Minimisation failed: {self.patchdir}")
 
     def apply_correct_stereoisomers(self):
-        pass
+        # NOTE: Must use a version of Gromacs which produces TPR files
+        # readable by the schro.ve virtual environment
+        output = os.path.join(self.patchdir, "stereo.gro")
+        execfile = os.path.join(self.patchdir, "run_stereo_stamp.sh")
+        stereo = os.path.abspath(
+            os.path.join(os.path.dirname(__file__), "stereo/stereo.py")
+        )
+        stereo_lookup = os.path.abspath(
+            os.path.join(self.config["filepaths"]["stereo"], "stereo.json")
+        )
+        with open(execfile, "w") as f:
+            f.writelines(
+                "\n".join(
+                    [
+                        "#!/usr/bin/bash",
+                        f"{self.config["filepaths"]["gmx"]} grompp -f {self.config["filepaths"]["mdp"]} -c minvac.gro -p patch.top -o stereo.tpr -maxwarn 1",
+                        f"source {self.config["filepaths"]["schro_venv"]}",
+                        f"python {stereo} minvac.gro stereo.tpr {stereo_lookup}",
+                    ]
+                )
+            )
+        subprocess.run(
+            ["bash", execfile],
+            cwd=self.patchdir,
+        )
+        if not os.path.isfile(output):
+            logger.error(f"Stereo stamp failed: {self.patchdir}")
+            raise FileNotFoundError(f"Stereo stamp failed: {self.patchdir}")
 
     def restore_residue_numbers(self):
-        pass
+        logger.debug(f"Restoring residue numbers for {self.patchdir}")
+        resnums_source = os.path.join(self.patchdir, "kicked.gro")
+        resnums_coord = os.path.join(self.patchdir, "stereo.gro")
+        resnums_dest = os.path.join(self.patchdir, "resnums.gro")
+        resnums_output = []
+
+        with open(resnums_source, "r") as source:
+            linecount = sum(1 for line in source) - 1
+            source.seek(0)
+
+            with open(resnums_coord, "r") as coord:
+                for line_i, (source_line, coord_line) in enumerate(
+                    zip(source.readlines(), coord.readlines())
+                ):
+                    # Skip the first 2 lines and the final line
+                    if (line_i == 0) or (line_i == 1) or (line_i == linecount):
+                        resnums_output.append(coord_line)
+                    else:
+                        # Replace the residue number in the coordinate line
+                        new_line = source_line[:5] + coord_line[5:]
+                        resnums_output.append(new_line)
+        with open(resnums_dest, "w") as dest:
+            dest.writelines(resnums_output)
+        if not os.path.isfile(resnums_dest):
+            logger.error(f"Residue number restoration failed: {self.patchdir}")
+            raise FileNotFoundError(
+                f"Residue number restoration failed: {self.patchdir}"
+            )
 
     def solvate(self):
-        pass
+        logger.debug(f"Solvating patch: {self.patchdir}")
+        output = os.path.join(self.patchdir, "solv.gro")
+        args = [
+            self.config["filepaths"]["gmx"],
+            "solvate",
+            "-cp",
+            "resnums.gro",
+            "-p",
+            "patch.top",
+            "-o",
+            output,
+        ]
+        subprocess.run(args, cwd=self.patchdir)
+        if not os.path.isfile(output):
+            logger.error(f"Solvation failed: {self.patchdir}")
+            raise FileNotFoundError(f"Solvation failed: {self.patchdir}")
 
     def delete_membrane_waters(self):
-        pass
+        logger.debug(f"Deleting membrane waters: {self.patchdir}")
+        output = os.path.join(self.patchdir, "solv_fix.gro")
+        args = [
+            "perl",
+            self.config["filepaths"]["water_deletor"],
+            "-in",
+            os.path.join(self.patchdir, "solv.gro"),
+            "-out",
+            output,
+            "-ref",
+            "O31",
+            "-middle",
+            "C216",
+            "-nwater",
+            "3",
+        ]
+        water_deletion = subprocess.run(
+            args, cwd=self.patchdir, capture_output=True, text=True
+        )
+        remaining_waters = water_deletion.stdout.split("\n")[-6].split()[0]
+
+        patch_topol = os.path.join(self.patchdir, "patch.top")
+        system_topol = os.path.join(self.patchdir, "system.top")
+        with open(patch_topol, "r") as source:
+            with open(system_topol, "w") as dest:
+                for line in source.readlines():
+                    if "SOL" in line:
+                        newline = line.split()[0] + "\t" + remaining_waters + "\n"
+                    else:
+                        newline = line
+                    dest.writelines(newline)
+                dest.write("\n")
+
+        if not (os.path.isfile(system_topol) and os.path.isfile(output)):
+            logger.error(f"Water deletion failed: {self.patchdir}")
+            raise FileNotFoundError(f"Water deletion failed: {self.patchdir}")
+        logger.info(f"New water count: {remaining_waters}")
 
     def add_ions(self):
-        pass
+        output = os.path.join(self.patchdir, "ions.gro")
+        args = [
+            self.config["filepaths"]["gmx"],
+            "grompp",
+            "-f",
+            os.path.join(self.config["filepaths"]["mdp"]),
+            "-c",
+            os.path.join(self.patchdir, "solv_fix.gro"),
+            "-p",
+            os.path.join(self.patchdir, "system.top"),
+            "-o",
+            os.path.join(self.patchdir, "ions.tpr"),
+            "-maxwarn",
+            "1",
+        ]
+        subprocess.run(args, cwd=self.patchdir)
+        if not os.path.isfile(os.path.join(self.patchdir, "ions.tpr")):
+            logger.error(f"Ion generation failed: {self.patchdir}")
+            raise FileNotFoundError(f"Ion generation failed: {self.patchdir}")
+
+        execfile = os.path.join(self.patchdir, "make_ions.sh")
+        with open(execfile, "w") as f:
+            f.writelines(
+                "\n".join(
+                    [
+                        "#!/usr/bin/bash",
+                        f"{self.config["filepaths"]["gmx"]} genion -s ions.tpr -p system.top -o ions.gro -neutral -conc 0.15 << EOF",
+                        "SOL",
+                        "EOF",
+                    ]
+                )
+            )
+        subprocess.run(
+            ["bash", execfile],
+            cwd=self.patchdir,
+        )
+        if not os.path.isfile(output):
+            logger.error(f"Ion insertion failed: {self.patchdir}")
+            raise FileNotFoundError(f"Ion insertion failed: {self.patchdir}")
 
     def generate_index(self):
-        pass
+        output = os.path.join(self.patchdir, "index.ndx")
+
+        # Make initial index file
+        execfile = os.path.join(self.patchdir, "make_index.sh")
+        with open(execfile, "w") as f:
+            f.writelines(
+                "\n".join(
+                    [
+                        "#!/usr/bin/bash",
+                        f"{self.config["filepaths"]["gmx"]} make_ndx -f ions.gro -o index.ndx << EOF",
+                        "q",
+                        "EOF",
+                    ]
+                )
+            )
+        idx_groups = subprocess.run(
+            ["bash", execfile], cwd=self.patchdir, capture_output=True, text=True
+        )
+        if not os.path.isfile(output):
+            logger.error(f"Index generation failed: {self.patchdir}")
+            raise FileNotFoundError(f"Index generation failed: {self.patchdir}")
+
+        # Merge water and ions
+        lipid_group = -1
+        for line in idx_groups.stdout.split("\n"):
+            if "Water_and_ions" in line:
+                lipid_group = str(int(line.split()[0]) + 1)
+                break
+        if lipid_group == -1:
+            logger.error(
+                f"Failed to find water_and_ions group in index file: {self.patchdir}"
+            )
+            raise ValueError(
+                f"Failed to find water_and_ions group in index file: {self.patchdir}"
+            )
+
+        # Make lipid group
+        execfile = os.path.join(self.patchdir, "edit_index.sh")
+        with open(execfile, "w") as f:
+            f.writelines(
+                "\n".join(
+                    [
+                        "#!/usr/bin/bash",
+                        f"{self.config["filepaths"]["gmx"]} make_ndx -f ions.gro -n index.ndx -o index.ndx << EOF",
+                        '!"Water_and_ions"',
+                        f"name {lipid_group} lipid" "q",
+                        "EOF",
+                    ]
+                )
+            )
+        subprocess.run(
+            ["bash", execfile],
+            cwd=self.patchdir,
+        )
 
     def minimise(self):
-        pass
+        logger.debug(f"Minimising patch: {self.patchdir}")
+        output = os.path.join(self.patchdir, "min.tpr")
+        args = [
+            self.config["filepaths"]["gmx"],
+            "grompp",
+            "-f",
+            os.path.join(self.config["filepaths"]["mdp"]),
+            "-c",
+            os.path.join(self.patchdir, "ions.gro"),
+            "-p",
+            os.path.join(self.patchdir, "system.top"),
+            "-o",
+            os.path.join(self.patchdir, "min.tpr"),
+            "-n",
+            os.path.join(self.patchdir, "index.ndx"),
+            "-maxwarn",
+            "0",
+        ]
+        subprocess.run(args, cwd=self.patchdir)
+        if not os.path.isfile(output):
+            logger.error(f"Minimisation preparation failed: {self.patchdir}")
+            raise FileNotFoundError(f"Minimisation preparation failed: {self.patchdir}")
+
+        args = [
+            self.config["filepaths"]["gmx"],
+            "mdrun",
+            "-deffnm",
+            "min",
+        ]
+        subprocess.run(args, cwd=self.patchdir)
+        if not os.path.isfile(os.path.join(self.patchdir, "min.gro")):
+            logger.error(f"Minimisation failed: {self.patchdir}")
+            raise FileNotFoundError(f"Minimisation failed: {self.patchdir}")
 
 
 class PatchCoordinator:
@@ -277,15 +584,17 @@ class PatchCoordinator:
 
         # Process the patch selection settings to determine how many patches to make
         self.frame_range = range(
-            self.config["frame_start"],
-            self.config["frame_end"],
-            self.config["frame_stride"],
+            self.config["patches"]["frame_start"],
+            self.config["patches"]["frame_end"],
+            self.config["patches"]["frame_stride"],
         )
         self.resid_range = self.config["patches"]["resid"]
 
     def copy_simulation_parameters(self):
         # Set up the patch forcefield, lipid topology/parameter files, and minimisation settings
-        self.topol = os.path.join(self.config["patches"]["patchdir"], "topol")
+        self.topol = os.path.abspath(
+            os.path.join(self.config["patches"]["patchdir"], "topol")
+        )
         logger.info(f"Copying parameters to {self.topol}")
         if not os.path.exists(self.topol):
             os.makedirs(self.topol)
@@ -294,7 +603,11 @@ class PatchCoordinator:
         self.charmm36_ff = os.path.join(
             self.topol, os.path.basename(self.config["filepaths"]["charmm36_ff"])
         )
-        shutil.copy2(self.config["filepaths"]["charmm36_ff"], self.charmm36_ff)
+        shutil.copytree(
+            self.config["filepaths"]["charmm36_ff"],
+            self.charmm36_ff,
+            dirs_exist_ok=True,
+        )
 
         # Additional cgenff params
         self.additional_params = os.path.join(self.topol, "additional_params.prm")
@@ -319,6 +632,9 @@ class PatchCoordinator:
         )
 
     def make_patches(self):
+        traj = load_cg_trajectory(
+            self.config["patches"]["traj"], self.config["patches"]["top"]
+        )
         for frame in self.frame_range:
             for resid in self.resid_range:
                 # Make a patch directory if it doesn't exist
@@ -329,22 +645,17 @@ class PatchCoordinator:
                     os.makedirs(patchdir)
 
                 patch = Patch(
+                    config=self.config,
                     patchdir=patchdir,
                     outname=f"patch_{frame}_{resid}.gro",
-                    cg_traj=self.config["patches"]["traj"],
-                    cg_top=self.config["patches"]["top"],
                     patch_frame=frame,
                     patch_resid=resid,
-                    patch_size=self.config["patches"]["size"],
+                    traj=traj,
                 )
 
                 patch.select_patch_residues()
                 patch.write_patch()
 
-                # TODO: Refactor so that the CG trajectory is loaded once
-                # by the PatchCoordinator and passed to each patch instance
-                # instead of loading it for each patch
-                del patch.traj
                 self.patches.append(patch)
 
     def make_patch_topologies(self):
@@ -390,7 +701,7 @@ class PatchCoordinator:
 
                 # Lipid contents
                 f.write("[ system ]\n")
-                f.write(f"{patch.patchdir}\n")
+                f.write(f"{os.path.basename(patch.patchdir)}\n")
                 f.write("[ molecules ]\n")
 
                 f.writelines(

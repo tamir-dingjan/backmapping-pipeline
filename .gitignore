@@ -2,8 +2,10 @@ __pycache__
 *.log
 schro.ve
 *gz
-mdp_files
 data
+!/data/backward.py
+!/data/Mapping/__init__.py
 !/tests/data
 scripts/prepare/template.py
 *csv
+scripts/run/patches
