@@ -1,5 +1,6 @@
 __pycache__
 *.log
+*.logging
 schro.ve
 *gz
 data
@@ -10,3 +11,6 @@ data
 scripts/prepare/template.py
 *csv
 scripts/run/patches
+patches/patch_*
+patches/topol
+venv

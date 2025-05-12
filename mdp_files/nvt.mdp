@@ -36,15 +36,15 @@ fourierspacing  = 0.16      ; grid spacing for FFT
 
 ; Temperature coupling is on
 tcoupl      = V-rescale                         ; modified Berendsen thermostat
-tc-grps     = lipid	Water_and_ions		; two coupling groups - more accurate
-tau_t       = 0.1	0.1                	; time constant, in ps
-ref_t       = 310	310			; reference temperature, one for each group, in K
+tc-grps     = System				; couple entire system
+tau_t       = 0.1	        	       	; time constant, in ps
+ref_t       = 310				; reference temperature, one for each group, in K
 
 ; Simulated annealing
-annealing   		= single 	single			; annealing type per tc-grp
-annealing-npoints	= 4		4			; number of annealing steps per group
-annealing-time		= 0 25 50 75    0 25 50 75 		; time for each annealing point
-annealing-temp		= 10 50 150 310 10 50 150 310		; temp for each annealing point
+annealing   		= single 	   	; annealing type per tc-grp
+annealing-npoints	= 4		   	; number of annealing steps per group
+annealing-time		= 0 25 50 75       	; time for each annealing point
+annealing-temp		= 10 50 150 310		; temp for each annealing point
 
 ; Pressure coupling is off
 pcoupl      = no        ; no pressure coupling in NVT

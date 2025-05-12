@@ -36,9 +36,9 @@ fourierspacing  = 0.16      ; grid spacing for FFT
 
 ; Temperature coupling is on
 tcoupl      = Nose-Hoover			; More accurate thermostat
-tc-grps     = lipid     Water_and_ions		; two coupling groups - more accurate
-tau_t       = 0.5       0.5 			; time constant, in ps
-ref_t       = 310       310			; reference temperature, one for each group, in K
+tc-grps     = System    			; couple entire system
+tau_t       = 0.5       			; time constant, in ps
+ref_t       = 310       			; reference temperature, one for each group, in K
 nsttcouple  = 10				; The frequency for temperature coupling
 
 ; Pressure coupling is on

@@ -1,0 +1,1 @@
+bkill -stat run

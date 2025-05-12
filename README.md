@@ -102,10 +102,11 @@ To use these files for cholesterol in the `backmapping-pipeline`:
     - Save as `CHL1.charmm36.map`
 - Edit the Martini parameter file `martini_v2.0_CHOL_02.itp` to change all occurances of `CHOL` to `CHL1` in the `[ moleculetype ]` and `[ atoms ]` sections
 - Copy the coordinate file `CHL1.mol2` to `filepaths:aa_coords`
-- Complete steps 2 through 6 in [Usage](#usage) to generate CGenFF parameters, stereoconformer references, Martini parameters and mapping files for all lipids. This will fail to generate Martini parameters and a mapping file for cholesterol.
+- Complete steps 2 through 5 in [Usage](#usage) to generate CGenFF parameters, stereoconformer references, Martini parameters and mapping files for all lipids. This will fail to generate Martini parameters and a mapping file for cholesterol.
 - Copy the Martini parameter file for cholesterol `martini_v2.0_CHOL_02.itp` to `filepaths:cg_martini_parameters/CHL1.itp`
 - Copy the Charmm parameter file `CHL1.itp` to `filepaths:aa_gmx_parameters/CHL1.itp`, overwriting the CGenFF-generated file
 - Copy the mapping file `CHL1.charmm36.map` to `filepaths:mapping/CHL1.charmm36.map`
+- Complete step 6 to build backmaps.
 - Proceed to the final step 7 to generate backmapped patches:
     - If the coarse-grained trajectory uses the residue name `CHOL` for cholesterol, rename this to `CHL1` in the coordinate file specified in `patches:top`
 
