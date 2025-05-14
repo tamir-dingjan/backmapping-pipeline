@@ -48,6 +48,15 @@ The backmapping pipeline follows these steps:
     python3 -m pip install --upgrade pip
     pip install --upgrade MDAnalysis
     ```
+    - Create a second virtual environment to install other required packages:
+    ```
+    python -m venv ./venv
+    source ./venv/bin/activate
+    uv pip install pyyaml numpy networkx polars rdkit mdtraj scikit-learn
+    ```
+
+Prior to each step in the protocol, the `PYTHONPATH` must be set prior to running the Python script to allow the Python itnerpreter to find the `backmapping` module:
+`export PYTHONPATH=$(pwd)`
 
 
 2. Parameterise lipids using CGenFF: `python scripts/prepare/0_generate_cgenff_params.py --config config.yaml`
