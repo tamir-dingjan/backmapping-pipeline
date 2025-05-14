@@ -65,7 +65,7 @@ Prior to each step in the protocol, the `PYTHONPATH` must be set prior to runnin
 
 4. Generate stereochemistry reference: `source schro.ve/bin/activate; python scripts/prepare/2_make_stereo_reference.py --config config.yaml`
 
-5. Generate Martini parameters: `python scripts/prepare/3_generate_martini_params.py --config config.yaml`
+5. Exit the Schrodinger virtual environment and reactivate the `./venv` environment, including resetting the `PYTHONPATH`.Generate Martini parameters: `python scripts/prepare/3_generate_martini_params.py --config config.yaml`. Ensure you have a `python2` in your path for this step, since the Martini ITP generator script is run in a subprocess using `python2`.
 
 6. Build mapping files: `python scripts/prepare/4_build_backmaps.py --config config.yaml`
 
