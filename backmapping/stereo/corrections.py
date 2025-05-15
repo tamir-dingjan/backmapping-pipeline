@@ -73,6 +73,7 @@ def flip_chiral_proton(chiral_atom, chiral_proton, heavy_nbors, u, positions):
 
 
 def flip_chiral_methyl(chiral_atom, heavy_nbors, u, positions):
+    logger.debug("Flipping methyl group at chiral center: %s" % chiral_atom.name)
     methyl = []
     non_methyl = []
     for nbor in heavy_nbors:
@@ -140,7 +141,8 @@ def correct_chiral_center(chiral_name, u, res, positions):
     elif len(bonded_protons) == 0:
         # This chiral center only has bonds to carbon atoms
         # Process this as part of a sterol
-        positions = flip_chiral_methyl(chiral_atom)
+        logger.debug(f"Found methyl group at chiral center: {chiral_atom.name}")
+        positions = flip_chiral_methyl(chiral_atom, heavy_nbors, u, positions)
 
     else:
         # Chiral center has multiple protons - apparently...
