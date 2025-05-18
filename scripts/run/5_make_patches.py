@@ -40,9 +40,11 @@ def main():
     patch_coordinator.copy_simulation_parameters()
     patch_coordinator.make_patches()
     patch_coordinator.make_patch_topologies()
-    patch_coordinator.backmap_all_patches()
-    patch_coordinator.correct_patch_stereoconformation()
-    patch_coordinator.prepare_patches_for_simulation()
+    # patch_coordinator.backmap_all_patches()
+    # patch_coordinator.correct_patch_stereoconformation()
+    # patch_coordinator.prepare_patches_for_simulation()
+
+    patch_coordinator.process_per_patch()
 
 
 if __name__ == "__main__":
