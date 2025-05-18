@@ -352,7 +352,7 @@ class Patch:
                     ]
                 )
             )
-
+        logger.debug(f"Checking stereoconformation for {self.patchdir}")
         subprocess.run(
             ["bash", execfile],
             cwd=self.patchdir,
@@ -395,6 +395,7 @@ class Patch:
                     ]
                 )
             )
+        logger.debug(f"Apply stereoconformation for {self.patchdir}")
         subprocess.run(
             ["bash", execfile],
             cwd=self.patchdir,
@@ -779,41 +780,44 @@ class PatchCoordinator:
             # 1 in minvac.gro. This should not be a problem,
             # but they can be copied back over from kicked.gro:
             # patch.restore_residue_numbers()
+            
+    def correct_patch_stereoconformation_single(self, patch):
+        patch.apply_correct_stereoisomers("minvac.gro")
+        # Produces "stereo.gro"
+
+        stereochem_correction_iter = 0
+        patch.minimise_in_vacuum(
+            "stereo", f"stereo_min_{stereochem_correction_iter}"
+        )
+        # Produces "stereo_min_0.gro"
+
+        while not (
+            patch.has_correct_stereo(
+                f"stereo_min_{stereochem_correction_iter}.gro"
+            )
+            or stereochem_correction_iter > MAX_STEREOCHEM_CORRECTION_ITER
+        ):
+            patch.apply_correct_stereoisomers(
+                f"stereo_min_{stereochem_correction_iter}.gro"
+            )
+            # Overwrites "stereo.gro"
+
+            stereochem_correction_iter += 1
+            patch.minimise_in_vacuum(
+                "stereo", f"stereo_min_{stereochem_correction_iter}"
+            )
+        patch.stereoconf_file = os.path.abspath(
+            os.path.join(
+                patch.patchdir, f"stereo_min_{stereochem_correction_iter}.gro"
+            )
+        )
 
     def correct_patch_stereoconformation(self):
         # Continue attempting to correct stereochemistry until MAX_STEREOCHEM_CORRECTION_ITER
         # is reached
         try:
             for patch in self.patches:
-                patch.apply_correct_stereoisomers("minvac.gro")
-                # Produces "stereo.gro"
-
-                stereochem_correction_iter = 0
-                patch.minimise_in_vacuum(
-                    "stereo", f"stereo_min_{stereochem_correction_iter}"
-                )
-                # Produces "stereo_min_0.gro"
-
-                while not (
-                    patch.has_correct_stereo(
-                        f"stereo_min_{stereochem_correction_iter}.gro"
-                    )
-                    or stereochem_correction_iter > MAX_STEREOCHEM_CORRECTION_ITER
-                ):
-                    patch.apply_correct_stereoisomers(
-                        f"stereo_min_{stereochem_correction_iter}.gro"
-                    )
-                    # Overwrites "stereo.gro"
-
-                    stereochem_correction_iter += 1
-                    patch.minimise_in_vacuum(
-                        "stereo", f"stereo_min_{stereochem_correction_iter}"
-                    )
-                patch.stereoconf_file = os.path.abspath(
-                    os.path.join(
-                        patch.patchdir, f"stereo_min_{stereochem_correction_iter}.gro"
-                    )
-                )
+                self.correct_patch_stereoconformation_single(patch)
 
         except Exception as e:
             logger.error(e)
@@ -828,3 +832,23 @@ class PatchCoordinator:
                 patch.minimise()
         except Exception as e:
             logger.error(e)
+
+    def process_per_patch(self):
+        for patch in self.patches:
+            logger.info(f"Processing patch: {patch.patchdir}")
+            try:    
+                patch.run_backward()
+                patch.remake_box_vectors()
+                patch.kick_overlapping_atoms()
+                patch.minimise_in_vacuum("kicked", "minvac")
+                self.correct_patch_stereoconformation_single(patch)
+                patch.solvate()
+                patch.delete_membrane_waters()
+                patch.add_ions()
+                patch.generate_index()
+                patch.minimise()
+            except Exception as e:
+                logger.error(e)
+                
+        
+                
