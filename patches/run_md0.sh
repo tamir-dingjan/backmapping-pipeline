@@ -3,7 +3,7 @@
 touch md0.logging
 echo "Starting patch simulation md0" > md0.logging
 
-for patchdir in /home/labs/futerlab/tamird/equil_chol_all_atom/d-erythro/patches/patch_*/
+for patchdir in /home/labs/futerlab/tamird/equil_chol_all_atom/3keto/patches/patch_*/
 do
 	cd $patchdir
 	if test -f "md0.gro"; then
@@ -16,19 +16,21 @@ do
 #BSUB -oo md0_output
 #BSUB -eo md0_error
 #BSUB -gpu "num=1:j_exclusive=yes"
-#BSUB -n 2
+#BSUB -n 1
 #BSUB -R "span[hosts=1]"
 #BSUB -R "rusage[mem=2GB]"
-#BSUB -R "affinity[thread(10, same=socket)]"
+#BSUB -R "affinity[thread(20, same=socket)]"
 #BSUB -W 5750
 #BSUB -cwd $patchdir
 
-module load GROMACS/2023.1-foss-2022a-CUDA-11.7.0
+module spider GROMACS >> gmxmodules |& tee
+module load $(grep -m 1 CUDA gmxmodules | tail -n1)
 
 if [ ! -f md0.cpt ]; then
-  gmx mdrun -deffnm md0 -ntmpi 2 -ntomp 10 -cpo md0.cpt  
+  gmx grompp -f ../md0.mdp -c npt.gro -p system_rel.top -n index.ndx -o md0.tpr
+  gmx mdrun -deffnm md0 -ntmpi 1 -ntomp 20 -cpo md0.cpt  
 else
-  gmx mdrun -deffnm md0 -ntmpi 2 -ntomp 10 -cpi md0.cpt -cpo md0.cpt
+  gmx mdrun -deffnm md0 -ntmpi 1 -ntomp 20 -cpi md0.cpt -cpo md0.cpt
 fi
 
 EOF
