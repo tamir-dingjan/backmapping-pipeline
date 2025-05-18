@@ -1,0 +1,87 @@
+Clone the github repository for the backmapping-pipeline here
+
+Make the directories listed in the config.yaml:
+mkdir aa_coords aa_cgenff aa_gmx stereo cg_martini
+
+Make the 3-keto structure files in aa_coords
+
+Make the Schrodinger virtual environment
+
+Make a new venv for this project (Python 3.12.9):
+/home/tamir/anaconda3/envs/backmapping-pipeline/bin/python -m venv ./venv
+
+Add dependencies
+pip install pyyaml
+pip install numpy
+pip install networkx
+pip install polars
+pip install rdkit
+pip install mdtraj
+pip install scikit-learn
+
+This is much faster using uv:
+uv pip install pyyaml numpy networkx polars rdkit mdtraj scikit-learn
+
+Set the pythonpath to the local directory:
+export PYTHONPATH=$(pwd)
+
+Copy cholesterol coordinate file to aa_coords:
+cp data/chol/CHL1.mol2 data/aa_coords/
+
+Run the preparation scripts:
+python scripts/prepare/0_generate_cgenff_params.py --config config.yaml
+python scripts/prepare/1_convert_cgenff_params_to_gmx.py --config config.yaml
+
+Open a new shell in the same directory and activate the Schrodinger virtual environment:
+source schro.ve/bin/activate
+export PYTHONPATH=$(pwd)
+
+Run the next preparation script:
+python scripts/prepare/2_make_stereo_reference.py --config config.yaml
+
+Return to the original shell and continue with the preparation scripts:
+python scripts/prepare/3_generate_martini_params.py --config config.yaml
+
+Copy the cholesterol files to their respective locations:
+cp data/chol/martini_v2.0_CHOL_02.itp data/cg_martini/CHL1.itp
+cp data/chol/CHL1.itp data/aa_gmx/CHL1.itp
+
+Continue with the preparation scripts:
+python scripts/prepare/4_build_backmaps.py --config config.yaml
+
+Add the cholesterol mapping file:
+cp data/chol/CHL1.charmm36.map data/Mapping/
+
+Prepare a snapshot of the CG trajectory with naming changes:
+all **Pc lipids to **PC 
+CHOL to CHL1
+
+Prepare a 1us stride vesion of the CG trajectory:
+prod_1us.xtc
+
+Select residues to backmap. For ceramides let's take all the residues. For SM, take one of each resname:
+KgC2 - 1,2,3,4,5,6,2589,2590, 
+KfC2 - 7,8,9,10,11,12,13,14,15,16,2591,2592,2593,2594,
+KAS2 - 1647
+ECS2 - 1670
+KCS2 - 1682
+KCS3 - 1979
+QCS2 - 1980
+KES2 - 2003
+QES2 - 2039
+EGS4 - 2056
+KGS2 - 2058
+QGS2 - 2071
+KHS2 - 2077
+QHS2 - 2145
+KgS2 - 2170
+EfS3 - 2348
+KfS2
+KfS3
+KjS2
+
+Regenerate lipid class substructure match SMILES strings from 3-keto versions of the SL headgroups
+because the D-erythro SMILES strings do not match the 3-keto AA structures.
+
+Backmap patchs:
+python scripts/run/5_make_patches.py --config config.yaml
