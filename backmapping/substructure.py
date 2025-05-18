@@ -23,13 +23,17 @@ def get_substructure_for_lipid_class(LipidClass):
         case LipidClass.PG:
             return "[H]OC([H])([H])C([H])(O[H])C([H])([H])O[PH](O)(O)OC([H])([H])C([H])(OC)C([H])([H])OC"
         case LipidClass.Cer:
-            return "[H]OC([H])([H])C([H])(N([H])C(O)C([H])[H])C([H])(C)O[H]"
+            # return "[H]OC([H])([H])C([H])(N([H])C(O)C([H])[H])C([H])(C)O[H]" # D-erythro
+            return "[H]OC([H])([H])C([H])(C(C)O)N([H])C(O)C([H])[H]"  # 3-keto
         case LipidClass.DeoxyCer:
-            return "[H]OC([H])(C)C([H])(C([H])[H])N([H])C(O)C([H])[H]"
+            # return "[H]OC([H])(C)C([H])(C([H])[H])N([H])C(O)C([H])[H]" # D-erythro
+            return "[H]CC([H])C(O)[C]([H])(N([H])C(O)C([H])[H])C([H])([H])[H]"  # 3-keto
         case LipidClass.SM:
-            return "NCCOPOCCNCO"
+            # return "NCCOPOCCNCO" # D-erythro
+            return "[H]CC(O)C([H])(N([H])CO)C([H])([H])O[PH](O)(O)OC([H])([H])C([H])([H])[N+](C([H])([H])[H])(C([H])([H])[H])C([H])([H])[H]"  # 3-keto
         case LipidClass.HexCer:
-            return "[H]CC([H])(O[H])C([H])(N([H])C(O)C([H])[H])C([H])([H])OC1([H])OC([H])(C([H])([H])O[H])C([H])(O[H])C([H])(O[H])C1([H])O[H]"
+            # return "[H]CC([H])(O[H])C([H])(N([H])C(O)C([H])[H])C([H])([H])OC1([H])OC([H])(C([H])([H])O[H])C([H])(O[H])C([H])(O[H])C1([H])O[H]" # D-erythro
+            return "[H]CC(O)C([H])(N([H])C(O)C([H])[H])C([H])([H])OC1([H])OC([H])(C([H])([H])O[H])C([H])(O[H])C([H])(O[H])C1([H])O[H]"  # 3-keto
         case LipidClass.Sterol:
             return "[H]OC1([H])C([H])([H])C2C([H])C([H])([H])C3([H])C4([H])C([H])([H])C([H])([H])C([H])C4(C([H])([H])[H])C([H])([H])C([H])([H])C3([H])C2(C([H])([H])[H])C([H])([H])C1([H])[H]"
         case _:
