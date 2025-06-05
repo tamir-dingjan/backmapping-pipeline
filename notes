@@ -3,7 +3,8 @@ Clone the github repository for the backmapping-pipeline here
 Make the directories listed in the config.yaml:
 mkdir aa_coords aa_cgenff aa_gmx stereo cg_martini
 
-Make the 3-keto structure files in aa_coords
+Copy the d-erythro structure files in aa_coords from: /mnt/3a29b482-dac1-4563-be89-d63ad92354e9/plasma_membrane/equil_chol/all_atom/d-erytho/backmapping-pipeline/data/aa_coords/
+Copy in the Maestro lipid project from: /mnt/3a29b482-dac1-4563-be89-d63ad92354e9/backmap_portable/data/aa_coords
 
 Make the Schrodinger virtual environment
 $SCHRODINGER/run schrodinger_virtualenv.py schro.ve
@@ -24,6 +25,7 @@ pip install mdtraj
 pip install scikit-learn
 
 This is much faster using uv:
+source ./venv/bin/activate
 uv pip install pyyaml numpy networkx polars rdkit mdtraj scikit-learn
 
 Set the pythonpath to the local directory:

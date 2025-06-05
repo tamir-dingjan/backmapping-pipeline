@@ -3,8 +3,8 @@ logging:
 
 patches:
   patchdir: "patches"
-  traj: "/mnt/3a29b482-dac1-4563-be89-d63ad92354e9/plasma_membrane/equil_chol/construct/iter2/asym/prod_1us.xtc"
-  top: "/mnt/3a29b482-dac1-4563-be89-d63ad92354e9/plasma_membrane/equil_chol/all_atom/d-erytho/backmapping-pipeline/scripts/run/equil_chol_iter2_asym_snapshot.gro"
+  traj: "/mnt/3a29b482-dac1-4563-be89-d63ad92354e9/plasma_membrane/equil_chol_40molpc/iter2/asym/prod_1us.xtc"
+  top: "/mnt/3a29b482-dac1-4563-be89-d63ad92354e9/plasma_membrane/equil_chol_40molpc/all_atom/d-erythro/backmapping-pipeline/scripts/run/equil_chol_40molpc_iter2_asym_snapshot.gro"
   frame_start: 10
   frame_end: 24
   frame_stride: 5
@@ -17,7 +17,7 @@ filepaths:
   aa_gmx_parameters: "data/aa_gmx"
   mdp: "mdp_files/min.mdp"
   stereo: "data/stereo"
-  martini_beads: "/mnt/3a29b482-dac1-4563-be89-d63ad92354e9/plasma_membrane/equil_chol/0_tailbeads.csv"
+  martini_beads: "/mnt/3a29b482-dac1-4563-be89-d63ad92354e9/plasma_membrane/equil_chol_40molpc/2025-04-24--11-20-10/0.csv"
   mapping: "data/Mapping"
   cg_martini_parameters: "data/cg_martini"
   cgenff: "/opt/silcsbio.2024.1/cgenff/cgenff"
