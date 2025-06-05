@@ -22,7 +22,8 @@ do
 #BSUB -R "affinity[thread(20, same=socket)]"
 #BSUB -W 5750
 #BSUB -cwd $patchdir
-
+EOF
+                cat >> md0.submit <<'EOF'
 module spider GROMACS >> gmxmodules |& tee
 module load $(grep -m 1 CUDA gmxmodules | tail -n1)
 

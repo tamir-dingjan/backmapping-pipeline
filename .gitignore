@@ -13,4 +13,6 @@ scripts/prepare/template.py
 scripts/run/patches
 patches/patch_*
 patches/topol
+patches/bench
+patches/bad_stereo
 venv
