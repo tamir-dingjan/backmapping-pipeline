@@ -6,6 +6,10 @@ mkdir aa_coords aa_cgenff aa_gmx stereo cg_martini
 Make the 3-keto structure files in aa_coords
 
 Make the Schrodinger virtual environment
+$SCHRODINGER/run schrodinger_virtualenv.py schro.ve
+source schro.ve/bin/activate
+python3 -m pip install --upgrade pip
+pip install --upgrade MDAnalysis
 
 Make a new venv for this project (Python 3.12.9):
 /home/tamir/anaconda3/envs/backmapping-pipeline/bin/python -m venv ./venv
