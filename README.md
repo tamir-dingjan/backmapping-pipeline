@@ -22,6 +22,8 @@
 1. Install the required packages by running `pip install -r requirements.txt` in your terminal.
 2. Clone this repository using the URL
 
+This has only been tested with Schrodinger Suite version 2024-3.
+
 ## Usage
 The backmapping pipeline follows these steps:
 
