@@ -323,6 +323,8 @@ class Patch:
                 "mdrun",
                 "-deffnm",
                 f"{outname}",
+                "-ntomp",
+                "5",
             ]
             subprocess.run(args, cwd=self.patchdir)
         if not os.path.isfile(output):
@@ -626,6 +628,8 @@ class Patch:
             "mdrun",
             "-deffnm",
             "min",
+            "-ntomp",
+            "5",
         ]
         subprocess.run(args, cwd=self.patchdir)
         if not os.path.isfile(os.path.join(self.patchdir, "min.gro")):
@@ -780,21 +784,17 @@ class PatchCoordinator:
             # 1 in minvac.gro. This should not be a problem,
             # but they can be copied back over from kicked.gro:
             # patch.restore_residue_numbers()
-            
+
     def correct_patch_stereoconformation_single(self, patch):
         patch.apply_correct_stereoisomers("minvac.gro")
         # Produces "stereo.gro"
 
         stereochem_correction_iter = 0
-        patch.minimise_in_vacuum(
-            "stereo", f"stereo_min_{stereochem_correction_iter}"
-        )
+        patch.minimise_in_vacuum("stereo", f"stereo_min_{stereochem_correction_iter}")
         # Produces "stereo_min_0.gro"
 
         while not (
-            patch.has_correct_stereo(
-                f"stereo_min_{stereochem_correction_iter}.gro"
-            )
+            patch.has_correct_stereo(f"stereo_min_{stereochem_correction_iter}.gro")
             or stereochem_correction_iter > MAX_STEREOCHEM_CORRECTION_ITER
         ):
             patch.apply_correct_stereoisomers(
@@ -807,9 +807,7 @@ class PatchCoordinator:
                 "stereo", f"stereo_min_{stereochem_correction_iter}"
             )
         patch.stereoconf_file = os.path.abspath(
-            os.path.join(
-                patch.patchdir, f"stereo_min_{stereochem_correction_iter}.gro"
-            )
+            os.path.join(patch.patchdir, f"stereo_min_{stereochem_correction_iter}.gro")
         )
 
     def correct_patch_stereoconformation(self):
@@ -836,7 +834,7 @@ class PatchCoordinator:
     def process_per_patch(self):
         for patch in self.patches:
             logger.info(f"Processing patch: {patch.patchdir}")
-            try:    
+            try:
                 patch.run_backward()
                 patch.remake_box_vectors()
                 patch.kick_overlapping_atoms()
@@ -849,6 +847,3 @@ class PatchCoordinator:
                 patch.minimise()
             except Exception as e:
                 logger.error(e)
-                
-        
-                
