@@ -66,25 +66,25 @@ Prepare a 1us stride vesion of the CG trajectory:
 prod_1us.xtc
 
 Select residues to backmap. For ceramides let's take all the residues. For SM, take one of each resname:
-KgC2 - 1,2,3,4,5,6,2589,2590, 
-KfC2 - 7,8,9,10,11,12,13,14,15,16,2591,2592,2593,2594,
-KAS2 - 1647
-ECS2 - 1670
-KCS2 - 1682
-KCS3 - 1979
-QCS2 - 1980
-KES2 - 2003
-QES2 - 2039
-EGS4 - 2056
-KGS2 - 2058
-QGS2 - 2071
-KHS2 - 2077
-QHS2 - 2145
-KgS2 - 2170
-EfS3 - 2348
-KfS2
-KfS3
-KjS2
+KgC2 - 1,2,3,4,2607,2608
+KfC2 - 5,6,7,8,9,10,11,12,2609,2610,2611,
+KAS2 - 1914
+ECS2 - 1931
+KCS2 - 1940
+KCS3 - 2158
+QCS2 - 2159
+KES2 - 2176
+QES2 - 2203
+EGS4 - 2215
+KGS2 - 2217
+QGS2 - 2226
+KHS2 - 2230
+QHS2 - 2280
+KgS2 - 2299
+EfS3 - 2430
+KfS2 - 2431
+KfS3 - 2599
+KjS2 - 2600
 
 Regenerate lipid class substructure match SMILES strings from 3-keto versions of the SL headgroups
 because the D-erythro SMILES strings do not match the 3-keto AA structures.
