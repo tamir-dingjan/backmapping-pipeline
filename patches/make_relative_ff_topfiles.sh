@@ -4,6 +4,6 @@ for i in ./patch_*
 do
 	cd $i
 	cp system.top system_rel.top
-	sed -i 's|/mnt/3a29b482-dac1-4563-be89-d63ad92354e9/plasma_membrane/equil_chol/all_atom/3keto/backmapping-pipeline/patches|..|g' system_rel.top
+	sed -i 's|/media/tamir/Elements/simulation_data_backups/plasma_membrane/equil_chol_40molpc/all_atom_correct_sn1_sn2/d-erythro/backmapping-pipeline/patches|..|g' system_rel.top
 	cd ..
 done
