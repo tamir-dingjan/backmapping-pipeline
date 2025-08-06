@@ -4,7 +4,7 @@ logging:
 patches:
   patchdir: "patches"
   traj: "/mnt/3a29b482-dac1-4563-be89-d63ad92354e9/plasma_membrane/equil_chol_40molpc/iter2/asym/prod_1us.xtc"
-  top: "/mnt/3a29b482-dac1-4563-be89-d63ad92354e9/plasma_membrane/equil_chol_40molpc/all_atom/d-erythro/backmapping-pipeline/scripts/run/equil_chol_40molpc_iter2_asym_snapshot.gro"
+  top: "/media/tamir/Elements/simulation_data_backups/plasma_membrane/equil_chol_40molpc/all_atom_correct_sn1_sn2/d-erythro/backmapping-pipeline/scripts/run/equil_chol_40molpc_iter2_asym_snapshot.gro"
   frame_start: 10
   frame_end: 24
   frame_stride: 5
