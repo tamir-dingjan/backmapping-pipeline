@@ -12,7 +12,7 @@ EXCLUDED_BEADS_FILE = os.path.join(
     os.path.dirname(__file__), "excluded_bead_resnames.yaml"
 )
 
-MAX_STEREOCHEM_CORRECTION_ITER = 5
+MAX_STEREOCHEM_CORRECTION_ITER = 2
 
 
 class Patch:
@@ -460,6 +460,7 @@ class Patch:
             "-o",
             output,
         ]
+        logger.debug(f"Solvating with command:\n{args}\n")
         subprocess.run(args, cwd=self.patchdir)
         if not os.path.isfile(output):
             logger.error(f"Solvation failed: {self.patchdir}")
@@ -896,12 +897,19 @@ class PatchCoordinator:
                 # Re-check correct stereo after minimisation in solvent
                 # this requires first preparing a lipid-only coordinate file from the minimised system
                 patch.extract_minimised_lipids("min", "min_lipids")
-                while not patch.has_correct_stereo("min"):
+                iter_min_solvent = 0
+                while not (
+                    patch.has_correct_stereo("min_lipids")
+                    or (iter_min_solvent > MAX_STEREOCHEM_CORRECTION_ITER)
+                ):
+                    logger.info(f"Rebuilding patch")
                     # If incorrect stereo, correct the patch stereo from the minimised system
                     # Iteratively correct stereoconformation of extracted lipids
                     # Reset the correction iterator first to force overwriting
                     # the previous vacumm-minimised coordinate files
                     patch.stereochem_correction_iter = 0
+                    # Desolvate the patch.top to allow minimisation in vacuum
+                    patch.desolvate_topology()
                     self.correct_patch_stereoconformation_single(patch, "min_lipids")
                     # This will update the patch.stereoconf_file, so we can redo the following
                     # steps with new coordinates
@@ -910,6 +918,8 @@ class PatchCoordinator:
                     patch.add_ions()
                     patch.generate_index()
                     patch.minimise()
+                    patch.extract_minimised_lipids("min", "min_lipids")
+                    iter_min_solvent += 1
 
             except Exception as e:
                 logger.error(e)
