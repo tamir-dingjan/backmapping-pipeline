@@ -151,6 +151,24 @@ def correct_chiral_center(chiral_name, u, res, positions):
 
 
 def correct_unsat(bond, u, res, positions):
+    # Two methods are used to correct the unsaturation stereochemistry:
+    # 1. The first is simply to swap the positions of the proton and substituent on
+    # one end of the double bond. This works for terminal unsaturations, but
+    # doesn't work well when the unsaturation is part of an acyl chain
+    # because the remaining chain atoms are not moved, and tend to drag the
+    # conformation back to the original stereoisomer.
+    #
+    # 2. The second method is similar to that used to correct amide conformations.
+    # Reflect the substituent and proton of one end of the bond in a plane
+    # defined by the two unsaturated carbons (C1 and C2) and a point midway (X) between them.
+    # As for the amide correction, the midway point is on a straight line between C1 and C2,
+    # and so a single plane cannot be defined by these points. X must be displaced
+    # in a direction orthogonal to the C1-C2 vector, and orthogonal to the vector between both
+    # of the heavy-atom substituents.
+    # This constructs the plane that intersects both C1 and C2, and is normal to vector
+    # between the heavy-atom substituents, which is useful for reflecting one of the
+    # heavy atom substituents and proton on one end of the bond.
+
     begin_name = bond["begin"]
     end_name = bond["end"]
     logger.debug(f"Unmatched bond stereoconfonformer: {begin_name} - {end_name}")
@@ -164,39 +182,141 @@ def correct_unsat(bond, u, res, positions):
 
     begin_atom = begin_atom[0]
     end_atom = end_atom[0]
+    # Determine which correction method to use
+    # If both of the bond atoms are bonded to carbon atoms, then use method 2
+    # Note that if this unsaturation is part of an acyl chain this check will
+    # detect two neighbors for the begin and end atoms, because they are neighbors of eachother.
+    begin_nbors = u.select_atoms(f"element C and bonded (index {begin_atom.index})")
+    end_nbors = u.select_atoms(f"element C and bonded (index {end_atom.index})")
+    if (len(begin_nbors) == 2) and (len(end_nbors) == 2):
+        # Acyl chain unsaturation
 
-    # Find a substituent proton
-    for atom1, atom2 in zip([begin_atom, end_atom], [end_atom, begin_atom]):
-        proton = u.select_atoms(f"element H and bonded (index {atom1.index})")
-        substituent = u.select_atoms(
-            f"not (element H) and not (index {atom2.index}) and bonded (index {atom1.index})"
+        # Define the relevant heavy atom substituents
+        begin_sub = u.select_atoms(
+            f"not (element H) and not (index {end_atom.index}) and bonded (index {begin_atom.index})"
         )
-        if (len(proton) == 1) and (len(substituent) == 1):
-            break
-    if len(proton) != 1:
-        logger.warning("Could not find unsaturated proton to swap with")
-        return
-    elif len(substituent) != 1:
-        logger.warning("Could not find non-proton substituent to swap with")
-        return
-
-    proton = proton[0]
-    substituent = substituent[0]
-
-    logger.debug(
-        f"Swapping positions of proton ({proton.name}) and substituent ({substituent.name})"
-    )
-
-    swap_vec = positions[proton.index] - positions[substituent.index]
-    shifted_substituent_position = positions[substituent.index] + swap_vec
-    for substituent_proton in u.select_atoms(
-        f"element H and bonded (index {substituent.index})"
-    ):
-        positions[substituent_proton.index] = (
-            positions[substituent_proton.index] + swap_vec
+        end_sub = u.select_atoms(
+            f"not (element H) and not (index {begin_atom.index}) and bonded (index {end_atom.index})"
         )
-    positions[proton.index] = positions[substituent.index]
-    positions[substituent.index] = shifted_substituent_position
+
+        begin_proton = u.select_atoms(
+            f"element H and bonded (index {begin_atom.index})"
+        )
+        end_proton = u.select_atoms(f"element H and bonded (index {end_atom.index})")
+        if len(begin_sub) != 1:
+            logger.error(
+                f"Could not find substituent for unsaturation atom ({begin_atom.name})"
+            )
+            return
+        elif len(end_sub) != 1:
+            logger.error(
+                f"Could not find substituent for unsaturation atom ({end_atom.name})"
+            )
+            return
+        elif len(begin_proton) != 1:
+            logger.error(f"Could not find proton attached to atom ({begin_atom.name})")
+            return
+        elif len(end_proton) != 1:
+            logger.error(f"Could not find proton attached to atom ({end_atom.name})")
+            return
+
+        begin_sub = begin_sub[0]
+        end_sub = end_sub[0]
+        begin_proton = begin_proton[0]
+        end_proton = end_proton[0]
+
+        # Define the mobile substituent as the one with two bonded protons
+        mobile_sub_protons = []
+        for mobile_sub, mobile_proton, mobile_end in zip(
+            [begin_sub, end_sub], [begin_proton, end_proton], [begin_atom, end_atom]
+        ):
+            mobile_sub_protons = u.select_atoms(
+                f"element H and bonded (index {mobile_sub.index})"
+            )
+            if len(mobile_sub_protons) == 2:
+                break
+
+        # Quit if we couldn't find a mobile substituent
+        if len(mobile_sub_protons) == []:
+            logger.error(f"Could not find a substituent with two protons.")
+            return
+
+        logger.debug(
+            f"Reflecting the mobile substituent ({mobile_sub.name}) and proton ({mobile_proton.name}) around the double bond between ({begin_atom.name}) and ({end_atom.name})"
+        )
+
+        # Construct the point midway between the unsaturated carbon atoms
+        unsat_vec = positions[end_atom.index] - positions[begin_atom.index]
+        midway = positions[begin_atom.index] + 0.5 * unsat_vec
+
+        # Find the vector between the mobile substituent and the mobile proton
+        sub_vec = positions[mobile_sub.index] - positions[mobile_proton.index]
+
+        # Construct the vector orthogonal to the unsat_vec and sub_vec
+        orthogonal_vec = np.cross(unsat_vec, sub_vec)
+
+        # Displace the midway point along the orthogonal vector
+        # Doesn't matter which direction because it is only used for plane construction
+        displaced_midway = midway + orthogonal_vec
+
+        # Construct the plane
+        plane_coords = np.asarray(
+            [positions[begin_atom.index], positions[end_atom.index], displaced_midway]
+        )
+
+        # Reflect the end substituent and end proton in the plane
+        # Also reflect any protons attached to the end sub
+        a, b, c, d = get_plane_equation_from_points(plane_coords)
+
+        positions[mobile_sub.index] = mirror_point(a, b, c, d, mobile_sub.position)
+        for atom in mobile_sub_protons:
+            positions[atom.index] = mirror_point(a, b, c, d, atom.position)
+        positions[mobile_proton.index] = mirror_point(
+            a, b, c, d, mobile_proton.position
+        )
+
+        # To help combat snapback of the mobile substituent reverting the stereochemistry,
+        # displace the end of the bond attached to the mobile substituent by another bond length
+        # away from the new mobile substituent position. Also move the mobile proton with it.
+        shift_vec = positions[mobile_end.index] - positions[mobile_sub.index]
+        positions[mobile_end.index] = positions[mobile_end.index] + shift_vec
+        positions[mobile_proton.index] = positions[mobile_proton.index] + shift_vec
+
+    else:
+        # Terminal unsaturation
+
+        # Find a substituent proton
+        for atom1, atom2 in zip([begin_atom, end_atom], [end_atom, begin_atom]):
+            proton = u.select_atoms(f"element H and bonded (index {atom1.index})")
+            substituent = u.select_atoms(
+                f"not (element H) and not (index {atom2.index}) and bonded (index {atom1.index})"
+            )
+            if (len(proton) == 1) and (len(substituent) == 1):
+                break
+        if len(proton) != 1:
+            logger.error("Could not find unsaturated proton to swap with")
+            return
+        elif len(substituent) != 1:
+            logger.error("Could not find non-proton substituent to swap with")
+            return
+
+        proton = proton[0]
+        substituent = substituent[0]
+
+        logger.debug(
+            f"Swapping positions of proton ({proton.name}) and substituent ({substituent.name})"
+        )
+
+        swap_vec = positions[proton.index] - positions[substituent.index]
+        shifted_substituent_position = positions[substituent.index] + swap_vec
+        for substituent_proton in u.select_atoms(
+            f"element H and bonded (index {substituent.index})"
+        ):
+            positions[substituent_proton.index] = (
+                positions[substituent_proton.index] + swap_vec
+            )
+        positions[proton.index] = positions[substituent.index]
+        positions[substituent.index] = shifted_substituent_position
     return positions
 
 
