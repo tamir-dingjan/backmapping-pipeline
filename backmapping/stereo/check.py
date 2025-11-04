@@ -62,12 +62,19 @@ def run(coord, topol, stereo_lookup):
             raise InvalidPatchStereo
 
         # Check for any mismatches between the reference and measured stereoconformation
+
+        nonmatch_amide = get_nonmatching_amide(stereo, stereo_lookup_res)
+        nonmatch_unsat = get_nonmatching_unsat(stereo, stereo_lookup_res)
+        nonmatch_chiral = get_nonmatching_chiral_centers(stereo, stereo_lookup_res)
         if not (
-            (get_nonmatching_amide(stereo, stereo_lookup_res) == [])
-            and (get_nonmatching_unsat(stereo, stereo_lookup_res) == [])
-            and (get_nonmatching_chiral_centers(stereo, stereo_lookup_res) == [])
+            (nonmatch_amide == [])
+            and (nonmatch_unsat == [])
+            and (nonmatch_chiral == [])
         ):
             stereomatch = False
+            logger.debug(f"Non-matching amides: {nonmatch_amide}")
+            logger.debug(f"Non-matching unsaturations: {nonmatch_unsat}")
+            logger.debug(f"Non-matching chiral centers: {nonmatch_chiral}")
             break
 
     # Save the result of the check to disk - this allows reading beyond the subprocess environment
