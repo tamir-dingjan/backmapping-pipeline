@@ -31,15 +31,26 @@ def run(coord, topol, stereo_lookup):
 
     stereo_lookup = load_stereo_lookup(stereo_lookup)
 
+    stereomatch = (
+        True  # Default value is true, is set to false if any residue has mismatches
+    )
+
     # Check stereoconfiguration for each residue in the patch
-    resids = np.unique(u.select_atoms("all").resids)
+    resids = np.unique(
+        u.select_atoms("not resname CL NA SOL").resids
+    )  # Exclude ions and water so we can use this on any coordinate file
     for res in resids:
         logger.debug(f"Check stereoconfiguration for resid: {res}")
         resname = u.select_atoms(f"resid {str(res)}").resnames[0]
         pdb = get_PDBBlock(u, u.select_atoms(f"resid {str(res)}"), frame=0)
 
         stereo = get_stereo(pdb)
+        # print("\n### This file's stereo ###")
+        # print(stereo)
+
         stereo_lookup_res = stereo_lookup[resname]
+        # print("\n### Reference stereoconfiguration ###")
+        # print(stereo_lookup_res)
 
         # Validate that the chiral centers, unsaturations, and amide bonds
         # defined in the stereo lookup are also detected in the patch
@@ -51,18 +62,17 @@ def run(coord, topol, stereo_lookup):
             raise InvalidPatchStereo
 
         # Check for any mismatches between the reference and measured stereoconformation
-        if (
+        if not (
             (get_nonmatching_amide(stereo, stereo_lookup_res) == [])
             and (get_nonmatching_unsat(stereo, stereo_lookup_res) == [])
             and (get_nonmatching_chiral_centers(stereo, stereo_lookup_res) == [])
         ):
-            stereomatch = True
-        else:
             stereomatch = False
+            break
 
-        # Save the result of the check to disk - this allows reading beyond the subprocess enrivonment
-        with open("stereo.check", "w") as f:
-            f.write(f"{stereomatch}")
+    # Save the result of the check to disk - this allows reading beyond the subprocess environment
+    with open("stereo.check", "w") as f:
+        f.write(f"{stereomatch}")
 
     logger.info("Finished checking patch stereoconformation.")
     logger.info(f"Matched stereochemistry: {stereomatch}")

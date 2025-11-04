@@ -3,6 +3,8 @@ import json
 import networkx as nx
 import fnmatch
 import mdtraj as md
+import MDAnalysis as mda
+import MDAnalysis.transformations as trans
 import os
 from backmapping.logger import logger
 
@@ -100,3 +102,10 @@ def load_cg_trajectory(traj, top):
         msg = f"Error loading trajectory {traj} and topology {top}: {e}"
         logger.error(msg)
         raise
+
+
+def load_coordinates(coord, topol):
+    u = mda.Universe(topol, coord)
+    transforms = [trans.unwrap(u.select_atoms("all"))]
+    u.trajectory.add_transformations(*transforms)
+    return u

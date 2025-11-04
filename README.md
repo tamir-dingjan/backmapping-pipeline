@@ -54,7 +54,7 @@ The backmapping pipeline follows these steps:
     ```
     python -m venv ./venv
     source ./venv/bin/activate
-    uv pip install pyyaml numpy networkx polars rdkit mdtraj scikit-learn
+    uv pip install pyyaml numpy networkx polars rdkit mdtraj scikit-learn mdanalysis
     ```
 
 Prior to each step in the protocol, the `PYTHONPATH` must be set prior to running the Python script to allow the Python itnerpreter to find the `backmapping` module:

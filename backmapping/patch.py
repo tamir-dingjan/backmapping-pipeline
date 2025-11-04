@@ -5,7 +5,7 @@ import shutil
 import glob
 import subprocess
 from backmapping import kicker
-from backmapping.io_utils import load_cg_trajectory
+from backmapping.io_utils import load_cg_trajectory, load_coordinates
 from backmapping.logger import logger
 
 EXCLUDED_BEADS_FILE = os.path.join(
@@ -40,6 +40,7 @@ class Patch:
         self.excluded_beads = None
         self.lipids = None
         self.stereoconf_file = None
+        self.stereochem_correction_iter = 0
 
         # Read in the excluded bead residue names
         # These are used for excluding beads during backmapping
@@ -333,6 +334,7 @@ class Patch:
 
     def has_correct_stereo(self, coordfile: str):
         # Check if the provided coordinate file has the correct stereoconformation
+        coord = os.path.join(self.patchdir, f"{coordfile}.gro")
         output = os.path.join(self.patchdir, "stereo.check")
         execfile = os.path.join(self.patchdir, "run_stereo_check.sh")
         stereo_check = os.path.abspath(
@@ -350,7 +352,7 @@ class Patch:
                         # This file only stores connectivity, not conformation
                         # f"{self.config["filepaths"]["gmx"]} grompp -f {self.config["filepaths"]["mdp"]} -c {coordfile} -p patch.top -o stereo_check.tpr -maxwarn 1",
                         f"source {self.config["filepaths"]["schro_venv"]}",
-                        f"python {stereo_check} {coordfile} stereo.tpr {stereo_lookup}",
+                        f"python {stereo_check} {coord} stereo.tpr {stereo_lookup}",
                     ]
                 )
             )
@@ -378,6 +380,7 @@ class Patch:
     def apply_correct_stereoisomers(self, coordfile: str):
         # NOTE: Must use a version of Gromacs which produces TPR files
         # readable by the schro.ve virtual environment
+        coord = os.path.join(self.patchdir, f"{coordfile}.gro")
         output = os.path.join(self.patchdir, "stereo.gro")
         execfile = os.path.join(self.patchdir, "run_stereo_stamp.sh")
         stereo = os.path.abspath(
@@ -391,9 +394,9 @@ class Patch:
                 "\n".join(
                     [
                         "#!/usr/bin/bash",
-                        f"{self.config["filepaths"]["gmx"]} grompp -f {self.config["filepaths"]["mdp"]} -c {coordfile} -p patch.top -o stereo.tpr -maxwarn 1",
+                        f"{self.config["filepaths"]["gmx"]} grompp -f {self.config["filepaths"]["mdp"]} -c {coord} -p patch.top -o stereo.tpr -maxwarn 1",
                         f"source {self.config["filepaths"]["schro_venv"]}",
-                        f"python {stereo} {coordfile} stereo.tpr {stereo_lookup}",
+                        f"python {stereo} {coord} stereo.tpr {stereo_lookup}",
                     ]
                 )
             )
@@ -636,6 +639,24 @@ class Patch:
             logger.error(f"Minimisation failed: {self.patchdir}")
             raise FileNotFoundError(f"Minimisation failed: {self.patchdir}")
 
+    def extract_minimised_lipids(self, coordfile: str, outfile: str):
+        coord = os.path.join(self.patchdir, f"{coordfile}.gro")
+        topol = os.path.join(self.patchdir, f"{coordfile}.tpr")
+        out = os.path.join(self.patchdir, f"{outfile}.gro")
+
+        u = load_coordinates(coord, topol)
+        u.select_atoms("not resname CL NA SOL").write(out)
+        logger.debug(f"Extracted minimised lipids to file: {out}")
+
+    def desolvate_topology(self):
+        dry_topology = []
+        with open(os.path.join(self.patchdir, "patch.top"), "r") as infile:
+            for line in infile.readlines():
+                if not "SOL" in line:
+                    dry_topology.append(line)
+        with open(os.path.join(self.patchdir, "patch.top"), "w") as outfile:
+            outfile.writelines(dry_topology)
+
 
 class PatchCoordinator:
 
@@ -785,29 +806,34 @@ class PatchCoordinator:
             # but they can be copied back over from kicked.gro:
             # patch.restore_residue_numbers()
 
-    def correct_patch_stereoconformation_single(self, patch):
-        patch.apply_correct_stereoisomers("minvac.gro")
+    def correct_patch_stereoconformation_single(self, patch, coordfile: str):
+        # This method is in the PatchCoordinator rather than the Patch class
+        # because it tells the Patch what to do.
+        patch.apply_correct_stereoisomers(coordfile)
         # Produces "stereo.gro"
 
-        stereochem_correction_iter = 0
-        patch.minimise_in_vacuum("stereo", f"stereo_min_{stereochem_correction_iter}")
+        patch.minimise_in_vacuum(
+            "stereo", f"stereo_min_{patch.stereochem_correction_iter}"
+        )
         # Produces "stereo_min_0.gro"
 
         while not (
-            patch.has_correct_stereo(f"stereo_min_{stereochem_correction_iter}.gro")
-            or stereochem_correction_iter > MAX_STEREOCHEM_CORRECTION_ITER
+            patch.has_correct_stereo(f"stereo_min_{patch.stereochem_correction_iter}")
+            or patch.stereochem_correction_iter > MAX_STEREOCHEM_CORRECTION_ITER
         ):
             patch.apply_correct_stereoisomers(
-                f"stereo_min_{stereochem_correction_iter}.gro"
+                f"stereo_min_{patch.stereochem_correction_iter}"
             )
             # Overwrites "stereo.gro"
 
-            stereochem_correction_iter += 1
+            patch.stereochem_correction_iter += 1
             patch.minimise_in_vacuum(
-                "stereo", f"stereo_min_{stereochem_correction_iter}"
+                "stereo", f"stereo_min_{patch.stereochem_correction_iter}"
             )
         patch.stereoconf_file = os.path.abspath(
-            os.path.join(patch.patchdir, f"stereo_min_{stereochem_correction_iter}.gro")
+            os.path.join(
+                patch.patchdir, f"stereo_min_{patch.stereochem_correction_iter}.gro"
+            )
         )
 
     def correct_patch_stereoconformation(self):
@@ -831,6 +857,28 @@ class PatchCoordinator:
         except Exception as e:
             logger.error(e)
 
+    def load_patches(self):
+        traj = load_cg_trajectory(
+            self.config["patches"]["traj"], self.config["patches"]["top"]
+        )
+        for frame in self.frame_range:
+            for resid in self.resid_range:
+
+                patchdir = os.path.join(
+                    self.config["patches"]["patchdir"], f"patch_{frame}_{resid}"
+                )
+
+                patch = Patch(
+                    config=self.config,
+                    patchdir=patchdir,
+                    outname=f"patch_{frame}_{resid}.gro",
+                    patch_frame=frame,
+                    patch_resid=resid,
+                    traj=traj,
+                )
+
+                self.patches.append(patch)
+
     def process_per_patch(self):
         for patch in self.patches:
             logger.info(f"Processing patch: {patch.patchdir}")
@@ -839,11 +887,71 @@ class PatchCoordinator:
                 patch.remake_box_vectors()
                 patch.kick_overlapping_atoms()
                 patch.minimise_in_vacuum("kicked", "minvac")
-                self.correct_patch_stereoconformation_single(patch)
+                self.correct_patch_stereoconformation_single(patch, "minvac")
                 patch.solvate()
                 patch.delete_membrane_waters()
                 patch.add_ions()
                 patch.generate_index()
                 patch.minimise()
+                # Re-check correct stereo after minimisation in solvent
+                # this requires first preparing a lipid-only coordinate file from the minimised system
+                patch.extract_minimised_lipids("min", "min_lipids")
+                while not patch.has_correct_stereo("min"):
+                    # If incorrect stereo, correct the patch stereo from the minimised system
+                    # Iteratively correct stereoconformation of extracted lipids
+                    # Reset the correction iterator first to force overwriting
+                    # the previous vacumm-minimised coordinate files
+                    patch.stereochem_correction_iter = 0
+                    self.correct_patch_stereoconformation_single(patch, "min_lipids")
+                    # This will update the patch.stereoconf_file, so we can redo the following
+                    # steps with new coordinates
+                    patch.solvate()
+                    patch.delete_membrane_waters()
+                    patch.add_ions()
+                    patch.generate_index()
+                    patch.minimise()
+
+            except Exception as e:
+                logger.error(e)
+
+    def check_stereo(self):
+        for patch in self.patches:
+            logger.info(f"Checking stereo for patch: {patch.patchdir}")
+            try:
+                patch.extract_minimised_lipids("min", "min_lipids")
+                result = patch.has_correct_stereo("min_lipids")
+                logger.info(f"Stereocheck result: {result}")
+            except Exception as e:
+                logger.error(e)
+
+    def rebuild_bad_stereo(self):
+        for patch in self.patches:
+            logger.info(f"Checking stereo for patch: {patch.patchdir}")
+            try:
+                patch.extract_minimised_lipids("min", "min_lipids")
+                iter_min_solvent = 0
+                while not (
+                    patch.has_correct_stereo("min_lipids")
+                    or (iter_min_solvent > MAX_STEREOCHEM_CORRECTION_ITER)
+                ):
+                    logger.info(f"Rebuilding patch")
+                    # If incorrect stereo, correct the patch stereo from the minimised system
+                    # Iteratively correct stereoconformation of extracted lipids
+                    # Reset the correction iterator first to force overwriting
+                    # the previous vacumm-minimised coordinate files
+                    patch.stereochem_correction_iter = 0
+                    # Desolvate the patch.top to allow minimisation in vacuum
+                    patch.desolvate_topology()
+                    self.correct_patch_stereoconformation_single(patch, "min_lipids")
+                    # This will update the patch.stereoconf_file, so we can redo the following
+                    # steps with new coordinates
+                    patch.solvate()
+                    patch.delete_membrane_waters()
+                    patch.add_ions()
+                    patch.generate_index()
+                    patch.minimise()
+                    patch.extract_minimised_lipids("min", "min_lipids")
+                    iter_min_solvent += 1
+
             except Exception as e:
                 logger.error(e)
