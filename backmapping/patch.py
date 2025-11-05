@@ -945,6 +945,16 @@ class PatchCoordinator:
                     or (iter_min_solvent > MAX_STEREOCHEM_CORRECTION_ITER)
                 ):
                     logger.info(f"Rebuilding patch")
+                    patch.run_backward()
+                    patch.remake_box_vectors()
+                    patch.kick_overlapping_atoms()
+                    patch.minimise_in_vacuum("kicked", "minvac")
+                    self.correct_patch_stereoconformation_single(patch, "minvac")
+                    patch.solvate()
+                    patch.delete_membrane_waters()
+                    patch.add_ions()
+                    patch.generate_index()
+                    patch.minimise()
                     # If incorrect stereo, correct the patch stereo from the minimised system
                     # Iteratively correct stereoconformation of extracted lipids
                     # Reset the correction iterator first to force overwriting
