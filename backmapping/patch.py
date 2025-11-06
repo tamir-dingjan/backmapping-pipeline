@@ -948,23 +948,13 @@ class PatchCoordinator:
                     patch.run_backward()
                     patch.remake_box_vectors()
                     patch.kick_overlapping_atoms()
+                    # The patch.top file contains a solvent entry, so remove this before attempting to minimise in vacuum
+                    patch.desolvate_topology()
                     patch.minimise_in_vacuum("kicked", "minvac")
-                    self.correct_patch_stereoconformation_single(patch, "minvac")
-                    patch.solvate()
-                    patch.delete_membrane_waters()
-                    patch.add_ions()
-                    patch.generate_index()
-                    patch.minimise()
-                    # If incorrect stereo, correct the patch stereo from the minimised system
-                    # Iteratively correct stereoconformation of extracted lipids
                     # Reset the correction iterator first to force overwriting
                     # the previous vacumm-minimised coordinate files
                     patch.stereochem_correction_iter = 0
-                    # Desolvate the patch.top to allow minimisation in vacuum
-                    patch.desolvate_topology()
-                    self.correct_patch_stereoconformation_single(patch, "min_lipids")
-                    # This will update the patch.stereoconf_file, so we can redo the following
-                    # steps with new coordinates
+                    self.correct_patch_stereoconformation_single(patch, "minvac")
                     patch.solvate()
                     patch.delete_membrane_waters()
                     patch.add_ions()
