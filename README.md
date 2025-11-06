@@ -71,7 +71,11 @@ Prior to each step in the protocol, the `PYTHONPATH` must be set prior to runnin
 
 6. Build mapping files: `python scripts/prepare/4_build_backmaps.py --config config.yaml`
 
-7. Generate backmapped patches: `python scripts/run/5_make_patches.py --config config.yaml`
+7. Generate backmapped patches: `python scripts/run/5_make_patches.py --config config.yaml`. The result of checking for correct stereochemistry is saved in the `stereo.check` file for each patch. 
+> [!IMPORTANT]
+> Before equilibrating and simulating a patch, check that the patch stereochemistry is correct. You can do this by simply reading the contents of `stereo.check` or by running the validation utilities (see step 8. below)
+
+8. (Optional) Validate the correct stereochemistry using the tools in `scripts/validate/` to check for correct stereochemistry in minimised patches (`scripts/validate/check_stereo.py`) or to rebuild all patches which have incorrect stereochemistry (`scripts/validate/check_stereo_and_rebuild.py`).
 
 ## Common issues and how to fix them
 - The all-atom structures of lipids in mol2 format should have reasonable geometry, because the way bond valences are inferred by RDKit does involve the molecular conformation. If using the Schrodinger Suite to prepare these input structures, a quick minimisation seems to suffice.
