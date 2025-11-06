@@ -1,6 +1,6 @@
 #!/bin/bash
 
-touch sim.loggging
+touch sim.logging
 echo "Starting patch simulation equilibration and production" > sim.logging
 
 for patchdir in /home/labs/futerlab/tamird/equil_chol_40molpc_all_atom_correct_sn1_sn2/d-erythro/patches/patch_*/

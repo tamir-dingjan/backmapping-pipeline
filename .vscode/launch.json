@@ -5,6 +5,7 @@
     "version": "0.2.0",
     "configurations": [
 
+
         {
             "name": "0_generate_cgenff_params.py",
             "type": "debugpy",
@@ -14,6 +15,16 @@
             "cwd": "${fileDirname}",
             "env": {"PYTHONPATH": "${workspaceFolder}${pathSeparator}${env:PYTHONPATH}"},
             "args": ["--config", "${workspaceFolder}/config.yaml"]
+        },
+        {
+            "name": "check stereo for patch",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "cwd": "/media/tamir/Elements/simulation_data_backups/plasma_membrane/equil_chol_40molpc/all_atom_correct_sn1_sn2/d-erythro/backmapping-pipeline/patches/patch_15_6",
+            "env": {"PYTHONPATH": "${workspaceFolder}${pathSeparator}${env:PYTHONPATH}"},
+            "args": ["min.gro", "min.tpr", "/media/tamir/Elements/simulation_data_backups/plasma_membrane/equil_chol_40molpc/all_atom_correct_sn1_sn2/d-erythro/backmapping-pipeline/data/stereo/stereo.json"]
         }
     ]
 }
