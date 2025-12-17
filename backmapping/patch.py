@@ -20,7 +20,7 @@ class Patch:
     # TODO: refactor to work with config dict rather than individual settings
     # This will let each patch know where backward.py and the schro.ve files are
     def __init__(
-        self, config, patchdir, outname, patch_frame: int, patch_resid: int, traj=None
+        self, config, patchdir, outname, patch_frame: int, patch_resid: int, traj=None, post_production=False
     ):
         logger.debug("Initializing Patch")
         self.config = config
@@ -42,65 +42,66 @@ class Patch:
         self.stereoconf_file = None
         self.stereochem_correction_iter = 0
 
-        # Read in the excluded bead residue names
-        # These are used for excluding beads during backmapping
-        if not os.path.exists(EXCLUDED_BEADS_FILE):
-            logger.error(f"Excluded beads file not found: {EXCLUDED_BEADS_FILE}")
-        else:
-            try:
-                with open(EXCLUDED_BEADS_FILE, "r") as f:
-                    self.excluded_beads = yaml.safe_load(f)
-            except yaml.YAMLError as e:
-                logger.error(f"Error loading excluded_beads.yaml: {e}")
+        if not post_production:
+            # Read in the excluded bead residue names
+            # These are used for excluding beads during backmapping
+            if not os.path.exists(EXCLUDED_BEADS_FILE):
+                logger.error(f"Excluded beads file not found: {EXCLUDED_BEADS_FILE}")
+            else:
+                try:
+                    with open(EXCLUDED_BEADS_FILE, "r") as f:
+                        self.excluded_beads = yaml.safe_load(f)
+                except yaml.YAMLError as e:
+                    logger.error(f"Error loading excluded_beads.yaml: {e}")
 
-        # Check if patchdir exists
-        if not os.path.exists(self.patchdir):
-            logger.error(f"Patch directory {self.patchdir} does not exist.")
-            raise FileNotFoundError(f"Patch directory {self.patchdir} does not exist.")
+            # Check if patchdir exists
+            if not os.path.exists(self.patchdir):
+                logger.error(f"Patch directory {self.patchdir} does not exist.")
+                raise FileNotFoundError(f"Patch directory {self.patchdir} does not exist.")
 
-        # Optionally load the trajectory if passed in
-        if self.traj is None:
-            logger.debug(
-                f"Loading trajectory {self.cg_traj} with topology {self.cg_top}."
-            )
-            self.traj = load_cg_trajectory(self.cg_traj, self.cg_top)
-        if self.traj is None:
-            logger.error(
-                f"Failed to load trajectory {self.cg_traj} with topology {self.cg_top}."
-            )
-            raise ValueError(
-                f"Failed to load trajectory {self.cg_traj} with topology {self.cg_top}."
-            )
+            # Optionally load the trajectory if passed in
+            if self.traj is None:
+                logger.debug(
+                    f"Loading trajectory {self.cg_traj} with topology {self.cg_top}."
+                )
+                self.traj = load_cg_trajectory(self.cg_traj, self.cg_top)
+            if self.traj is None:
+                logger.error(
+                    f"Failed to load trajectory {self.cg_traj} with topology {self.cg_top}."
+                )
+                raise ValueError(
+                    f"Failed to load trajectory {self.cg_traj} with topology {self.cg_top}."
+                )
 
-        # Validate the patch selection frame and residue are within the trajectory
-        if self.patch_frame > len(self.traj):
-            logger.error(
-                f"Patch selection frame {self.patch_frame} is out of bounds for trajectory with {len(self.traj)} frames."
-            )
-            raise ValueError(
-                f"Patch selection frame {self.patch_frame} is out of bounds for trajectory with {len(self.traj)} frames."
-            )
+            # Validate the patch selection frame and residue are within the trajectory
+            if self.patch_frame > len(self.traj):
+                logger.error(
+                    f"Patch selection frame {self.patch_frame} is out of bounds for trajectory with {len(self.traj)} frames."
+                )
+                raise ValueError(
+                    f"Patch selection frame {self.patch_frame} is out of bounds for trajectory with {len(self.traj)} frames."
+                )
 
-        # Exclude the excluded beads from the trajectory
-        # This is done to prevent the water residues from clobbering
-        # lipid residue numbers
-        include = f"not resname {self.excluded_beads["ion"]} and not resname {self.excluded_beads["water"]}"
-        lipid_indices = self.traj.topology.select(include)
-        self.traj = self.traj.atom_slice(lipid_indices)
-        logger.debug(f"Excluded beads from trajectory: {self.excluded_beads}")
-        logger.debug(f"Selected {len(lipid_indices)} lipid atoms from trajectory.")
+            # Exclude the excluded beads from the trajectory
+            # This is done to prevent the water residues from clobbering
+            # lipid residue numbers
+            include = f"not resname {self.excluded_beads["ion"]} and not resname {self.excluded_beads["water"]}"
+            lipid_indices = self.traj.topology.select(include)
+            self.traj = self.traj.atom_slice(lipid_indices)
+            logger.debug(f"Excluded beads from trajectory: {self.excluded_beads}")
+            logger.debug(f"Selected {len(lipid_indices)} lipid atoms from trajectory.")
 
-        # Select the patch core residue
-        self.core = self.traj.topology.select(f"resSeq {self.patch_resid}")
+            # Select the patch core residue
+            self.core = self.traj.topology.select(f"resSeq {self.patch_resid}")
 
-        if len(self.core) == 0:
-            logger.error(
-                f"Patch selection residue {self.patch_resid} not found in trajectory."
-            )
-            raise ValueError(
-                f"Patch selection residue {self.patch_resid} not found in trajectory."
-            )
-        logger.debug(f"Selected core residue beads: {self.core}")
+            if len(self.core) == 0:
+                logger.error(
+                    f"Patch selection residue {self.patch_resid} not found in trajectory."
+                )
+                raise ValueError(
+                    f"Patch selection residue {self.patch_resid} not found in trajectory."
+                )
+            logger.debug(f"Selected core residue beads: {self.core}")
 
     def select_patch_residues(self):
         # TODO: Refactor to work on a single frame (self.patch_frame)
@@ -644,6 +645,9 @@ class Patch:
         coord = os.path.join(self.patchdir, f"{coordfile}.gro")
         topol = os.path.join(self.patchdir, f"{coordfile}.tpr")
         out = os.path.join(self.patchdir, f"{outfile}.gro")
+        
+        if not (os.path.exists(coord) and os.path.exists(topol)):
+            raise FileNotFoundError(f"Could not find coordinate file ({coordfile}.gro) or topology file ({coordfile}.tpr)")
 
         u = load_coordinates(coord, topol)
         u.select_atoms("not resname CL NA SOL").write(out)
@@ -858,7 +862,7 @@ class PatchCoordinator:
         except Exception as e:
             logger.error(e)
 
-    def load_patches(self):
+    def load_patches(self, post_production=False):
         traj = load_cg_trajectory(
             self.config["patches"]["traj"], self.config["patches"]["top"]
         )
@@ -876,6 +880,7 @@ class PatchCoordinator:
                     patch_frame=frame,
                     patch_resid=resid,
                     traj=traj,
+                    post_production=post_production
                 )
 
                 self.patches.append(patch)
@@ -930,6 +935,16 @@ class PatchCoordinator:
             try:
                 patch.extract_minimised_lipids("min", "min_lipids")
                 result = patch.has_correct_stereo("min_lipids")
+                logger.info(f"Stereocheck result: {result}")
+            except Exception as e:
+                logger.error(e)
+                
+    def check_stereo_post_production(self):
+        for patch in self.patches:
+            logger.info(f"Checking stereo for md0.gro file in patch: {patch.patchdir}")
+            try:
+                patch.extract_minimised_lipids("md0", "md0_lipids")
+                result = patch.has_correct_stereo("md0_lipids")
                 logger.info(f"Stereocheck result: {result}")
             except Exception as e:
                 logger.error(e)
